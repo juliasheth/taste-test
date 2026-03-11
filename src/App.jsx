@@ -910,60 +910,77 @@ export default function App() {
 
             {/* ── STYLE INPUT ──────────────────────────────────────────────── */}
             {step === "style" && (
-              <div className="split-layout fade-up">
-                <div className="split-left">
-                  <h2 style={{
-                    fontFamily: "'Playfair Display', serif",
-                    fontStyle: "italic",
-                    fontWeight: 400,
-                    fontSize: "clamp(28px, 4vw, 42px)",
-                    lineHeight: 1.2,
-                    marginBottom: 10,
-                    letterSpacing: "-0.01em",
-                  }}>
-                    describe your style.
-                  </h2>
-                  <p style={{ fontSize: 11, color: "#aaa", marginBottom: 36, letterSpacing: "0.04em", lineHeight: 1.6 }}>
-                    prose, references, vibes — or just a photo.
-                  </p>
+              <div className="fade-up" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "72px 0 88px", minHeight: "calc(100vh - 82px)", position: "relative" }}>
+                <button
+                  onClick={() => setStep("home")}
+                  style={{
+                    position: "absolute",
+                    top: 28,
+                    left: 0,
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    color: "#aaa",
+                    fontSize: 20,
+                    padding: 0,
+                    lineHeight: 1,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                  }}
+                  aria-label="go back"
+                >
+                  ←
+                </button>
+                <h2 style={{
+                  fontFamily: "'Playfair Display', serif",
+                  fontStyle: "italic",
+                  fontWeight: 400,
+                  fontSize: "clamp(28px, 4vw, 42px)",
+                  lineHeight: 1.2,
+                  marginBottom: 10,
+                  letterSpacing: "-0.01em",
+                  textAlign: "center",
+                }}>
+                  describe your style.
+                </h2>
+                <p style={{ fontSize: 11, color: "#aaa", marginBottom: 36, letterSpacing: "0.04em", lineHeight: 1.6, textAlign: "center" }}>
+                  prose, references, vibes — or just a photo.
+                </p>
 
-                  <form onSubmit={handleGenerate} style={{ width: "100%", maxWidth: 400 }}>
-                    <textarea
-                      placeholder="I'm drawn to clean lines and dark palettes, vintage pieces with a quiet edge..."
-                      value={description}
-                      onChange={e => setDescription(e.target.value)}
-                      rows={5}
-                      style={{ ...inputStyle, resize: "none", height: 130, lineHeight: 1.7, paddingTop: 4 }}
-                    />
+                <form onSubmit={handleGenerate} style={{ width: "100%", maxWidth: 400, display: "flex", flexDirection: "column", alignItems: "center" }}>
+                  <textarea
+                    placeholder="I'm drawn to clean lines and dark palettes, vintage pieces with a quiet edge..."
+                    value={description}
+                    onChange={e => setDescription(e.target.value)}
+                    rows={5}
+                    style={{ ...inputStyle, resize: "none", height: 180, lineHeight: 1.7, paddingTop: 12, width: "100%" }}
+                  />
 
-                    <div
-                      onClick={() => fileRef.current?.click()}
-                      style={{
-                        marginTop: 16,
-                        border: "1px dashed #2a2a2a",
-                        cursor: "pointer",
-                        overflow: "hidden",
-                        minHeight: photoPreview ? "auto" : 56,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      {photoPreview
-                        ? <img src={photoPreview} alt="style reference" style={{ width: "100%", display: "block", maxHeight: 220, objectFit: "cover" }} />
-                        : <p style={{ fontSize: 11, color: "#bbb", letterSpacing: "0.08em" }}>+ add a photo reference</p>
-                      }
-                    </div>
-                    <input ref={fileRef} type="file" accept="image/*" onChange={handlePhotoUpload} style={{ display: "none" }} />
+                  <div
+                    onClick={() => fileRef.current?.click()}
+                    style={{
+                      marginTop: 16,
+                      border: "1px dashed #2a2a2a",
+                      cursor: "pointer",
+                      overflow: "hidden",
+                      minHeight: photoPreview ? "auto" : 56,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      width: "100%",
+                    }}
+                  >
+                    {photoPreview
+                      ? <img src={photoPreview} alt="style reference" style={{ width: "100%", display: "block", maxHeight: 220, objectFit: "cover" }} />
+                      : <p style={{ fontSize: 11, color: "#bbb", letterSpacing: "0.08em" }}>+ add a photo reference</p>
+                    }
+                  </div>
+                  <input ref={fileRef} type="file" accept="image/*" onChange={handlePhotoUpload} style={{ display: "none" }} />
 
-                    {error && <p style={{ fontSize: 11, color: "#999", marginTop: 10 }}>{error}</p>}
-                    <button type="submit" style={{ ...btnStyle, marginTop: 28 }}>generate →</button>
-                  </form>
-                </div>
-
-                <div className="split-right" style={{ opacity: 0.65 }}>
-                  <Constellation highlightedWords={[]} relevantWords={[]} />
-                </div>
+                  {error && <p style={{ fontSize: 11, color: "#999", marginTop: 10, alignSelf: "flex-start" }}>{error}</p>}
+                  <button type="submit" style={{ ...btnStyle, marginTop: 28 }}>generate →</button>
+                </form>
               </div>
             )}
 
@@ -981,7 +998,28 @@ export default function App() {
 
             {/* ── EMAIL GATE ───────────────────────────────────────────────── */}
             {step === "email" && (
-              <div className="generating-layout fade-up" style={{ gap: 0 }}>
+              <div className="generating-layout fade-up" style={{ gap: 0, position: "relative" }}>
+                <button
+                  onClick={() => setStep("style")}
+                  style={{
+                    position: "absolute",
+                    top: 28,
+                    left: 0,
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    color: "#aaa",
+                    fontSize: 20,
+                    padding: 0,
+                    lineHeight: 1,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                  }}
+                  aria-label="go back"
+                >
+                  ←
+                </button>
                 <p style={{ fontSize: 11, letterSpacing: "0.14em", color: "#999", marginBottom: 16, textTransform: "uppercase" }}>
                   your style is
                 </p>
@@ -1040,7 +1078,7 @@ export default function App() {
 
           {/* ── RESULTS ────────────────────────────────────────────────── */}
             {step === "results" && (
-              <div className="fade-up" style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "72px 0 88px", minHeight: "calc(100vh - 82px)" }}>
+              <div className="fade-up" style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "72px 0 88px", minHeight: "calc(100vh - 82px)", position: "relative" }}>
                 <h2 style={{
                   fontFamily: "'DM Mono', monospace",
                   fontStyle: "normal",
