@@ -1,3 +1,3 @@
-# Shopping taste app
+# Shopping taste landing page
 
-This app allows people to ask for fashion recommendations, give recommendations to others, and save things to their wishlist.
+Allows people to sign up for our waitlist and get their three style words based on their described aesthetic. Gives them a shareable screenshot to share on social media with their style words and constellation.
