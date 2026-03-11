@@ -769,7 +769,7 @@ export default function App() {
   const [heroReady, setHeroReady]                 = useState(false);
   const fileRef = useRef(null);
 
-  const HERO_TEXT = "shop with people who get it.";
+  const HERO_TEXT = "shop with people who get you";
 
   useEffect(() => {
     if (step !== "home") return;
