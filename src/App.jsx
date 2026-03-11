@@ -898,7 +898,7 @@ export default function App() {
                   </h1>
 
                   <p style={{ fontSize: 13, color: "#888", lineHeight: 1.8, marginBottom: 44, maxWidth: 480, letterSpacing: "0.02em", opacity: heroReady ? 1 : 0, animation: heroReady ? "fadeUp 0.55s cubic-bezier(0.16,1,0.3,1) 0s both" : "none" }}>
-                    a platform for people with a point of view — where your aesthetic connects you with others who share it to get style inspiration and recommendations
+                    a platform for people with a point of view — where your aesthetic connects you with others who share it to get personalized style inspiration and recommendations
                   </p>
                   <button onClick={() => setStep("style")} style={{ ...btnStyle, opacity: heroReady ? 1 : 0, animation: heroReady ? "fadeUp 0.55s cubic-bezier(0.16,1,0.3,1) 0.18s both" : "none" }}>
                     Discover your aesthetic →
