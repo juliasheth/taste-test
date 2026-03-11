@@ -898,7 +898,7 @@ export default function App() {
                   </h1>
 
                   <p style={{ fontSize: 13, color: "#888", lineHeight: 1.8, marginBottom: 44, maxWidth: 480, letterSpacing: "0.02em", opacity: heroReady ? 1 : 0, animation: heroReady ? "fadeUp 0.55s cubic-bezier(0.16,1,0.3,1) 0s both" : "none" }}>
-                    a platform for people with a point of view — where your aesthetic connects you with others who share it
+                    a platform for people with a point of view — where your aesthetic connects you with others who share it to get style inspiration and recommendations
                   </p>
                   <button onClick={() => setStep("style")} style={{ ...btnStyle, opacity: heroReady ? 1 : 0, animation: heroReady ? "fadeUp 0.55s cubic-bezier(0.16,1,0.3,1) 0.18s both" : "none" }}>
                     Discover your aesthetic →
@@ -1008,7 +1008,7 @@ export default function App() {
 
                 <div style={{ marginTop: 52, width: "100%", maxWidth: 400 }}>
                   <p style={{ fontSize: 11, color: "#555", letterSpacing: "0.04em", marginBottom: 28, lineHeight: 1.6, textAlign: "center" }}>
-                    enter your email to reveal your constellation
+                    enter your email to reveal your style map and get early access when we launch
                   </p>
                   <form onSubmit={handleWaitlist}>
                     <div style={{ marginBottom: 14 }}>
@@ -1033,7 +1033,7 @@ export default function App() {
                     </div>
                     {waitlistError && <p style={{ fontSize: 11, color: "#999", marginBottom: 12 }}>{waitlistError}</p>}
                     <button type="submit" style={{ ...btnStyle, width: "100%", textAlign: "center" }}>
-                      reveal my constellation →
+                      reveal my style map →
                     </button>
                   </form>
                 </div>
