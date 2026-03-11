@@ -7,34 +7,198 @@ const supabase = SUPABASE_URL ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : 
 
 // ─── CONSTELLATION NODES ────────────────────────────────────────────────────
 const STYLE_NODES = [
-  { id: "minimal",       x: 28, y: 48 },
-  { id: "editorial",     x: 40, y: 36 },
-  { id: "dark",          x: 16, y: 70 },
-  { id: "romantic",      x: 65, y: 20 },
-  { id: "preppy",        x: 80, y: 28 },
-  { id: "sporty",        x: 74, y: 75 },
-  { id: "vintage",       x: 52, y: 62 },
-  { id: "streetwear",    x: 58, y: 80 },
-  { id: "bohemian",      x: 46, y: 16 },
-  { id: "classic",       x: 86, y: 48 },
-  { id: "avant-garde",   x: 20, y: 26 },
-  { id: "feminine",      x: 74, y: 16 },
-  { id: "androgynous",   x: 34, y: 30 },
-  { id: "maximalist",    x: 62, y: 38 },
-  { id: "coastal",       x: 88, y: 62 },
-  { id: "cottagecore",   x: 54, y: 10 },
-  { id: "luxe",          x: 92, y: 36 },
-  { id: "grunge",        x: 12, y: 82 },
-  { id: "ethereal",      x: 38, y: 8  },
-  { id: "urban",         x: 44, y: 72 },
-  { id: "architectural", x: 18, y: 52 },
-  { id: "sensual",       x: 70, y: 56 },
-  { id: "playful",       x: 60, y: 26 },
-  { id: "sophisticated", x: 82, y: 54 },
-  { id: "raw",           x: 24, y: 86 },
+  // Dark / Punk cluster (top-left)
+  { id: "dark",          x: 6,  y: 8  },
+  { id: "grunge",        x: 4,  y: 18 },
+  { id: "punk",          x: 12, y: 12 },
+  { id: "rebellious",    x: 16, y: 22 },
+  { id: "raw",           x: 6,  y: 35 },
+  { id: "edgy",          x: 20, y: 16 },
+  { id: "moody",         x: 14, y: 30 },
+  { id: "subversive",    x: 22, y: 8  },
+  { id: "irreverent",    x: 18, y: 42 },
+  { id: "rock",          x: 10, y: 45 },
+  { id: "stark",         x: 6,  y: 52 },
+  { id: "undone",        x: 24, y: 38 },
+
+  // Avant-garde / Conceptual cluster (top-center-left)
+  { id: "avant-garde",   x: 28, y: 10 },
+  { id: "architectural", x: 32, y: 4  },
+  { id: "deconstructed", x: 38, y: 12 },
+  { id: "sculptural",    x: 44, y: 6  },
+  { id: "futuristic",    x: 36, y: 20 },
+  { id: "brutalist",     x: 26, y: 22 },
+  { id: "surreal",       x: 46, y: 14 },
+  { id: "unexpected",    x: 40, y: 28 },
+  { id: "dramatic",      x: 30, y: 32 },
+  { id: "mysterious",    x: 22, y: 28 },
+
+  // Glamorous / Maximalist cluster (top-center)
+  { id: "maximalist",    x: 52, y: 8  },
+  { id: "glamorous",     x: 58, y: 14 },
+  { id: "opulent",       x: 50, y: 18 },
+  { id: "embellished",   x: 60, y: 22 },
+  { id: "baroque",       x: 64, y: 8  },
+  { id: "ornate",        x: 66, y: 18 },
+  { id: "disco",         x: 56, y: 28 },
+  { id: "glam",          x: 62, y: 28 },
+  { id: "loud",          x: 48, y: 26 },
+  { id: "chromatic",     x: 44, y: 20 },
+  { id: "vivid",         x: 48, y: 14 },
+  { id: "colorful",      x: 54, y: 22 },
+
+  // Romantic / Soft cluster (top-right)
+  { id: "romantic",      x: 68, y: 8  },
+  { id: "ethereal",      x: 72, y: 4  },
+  { id: "dreamy",        x: 76, y: 12 },
+  { id: "soft",          x: 70, y: 20 },
+  { id: "fairy",         x: 80, y: 8  },
+  { id: "delicate",      x: 86, y: 14 },
+  { id: "feminine",      x: 76, y: 22 },
+  { id: "pastel",        x: 88, y: 8  },
+  { id: "whimsical",     x: 92, y: 16 },
+  { id: "flowy",         x: 72, y: 28 },
+  { id: "flirty",        x: 84, y: 22 },
+  { id: "joyful",        x: 82, y: 30 },
+  { id: "playful",       x: 68, y: 20 },
+  { id: "bright",        x: 78, y: 20 },
+  { id: "vibrant",       x: 66, y: 28 },
+
+  // Luxe / Classic cluster (right)
+  { id: "luxe",          x: 96, y: 10 },
+  { id: "luxurious",     x: 94, y: 22 },
+  { id: "elevated",      x: 98, y: 28 },
+  { id: "discerning",    x: 96, y: 36 },
+  { id: "elegant",       x: 92, y: 28 },
+  { id: "chic",          x: 88, y: 36 },
+  { id: "parisian",      x: 90, y: 44 },
+  { id: "classic",       x: 94, y: 44 },
+  { id: "polished",      x: 96, y: 52 },
+  { id: "refined",       x: 90, y: 52 },
+  { id: "sophisticated", x: 86, y: 44 },
+  { id: "timeless",      x: 92, y: 58 },
+  { id: "tailored",      x: 84, y: 38 },
+  { id: "preppy",        x: 86, y: 30 },
+  { id: "ballet",        x: 80, y: 36 },
+
+  // Structured / Academic cluster (center)
+  { id: "structured",    x: 48, y: 36 },
+  { id: "academic",      x: 32, y: 44 },
+  { id: "academia",      x: 36, y: 52 },
+  { id: "studied",       x: 42, y: 44 },
+  { id: "intentional",   x: 50, y: 30 },
+  { id: "curated",       x: 46, y: 54 },
+  { id: "layered",       x: 36, y: 58 },
+  { id: "textured",      x: 28, y: 52 },
+  { id: "clever",        x: 44, y: 50 },
+  { id: "balanced",      x: 40, y: 60 },
+  { id: "thoughtful",    x: 30, y: 62 },
+  { id: "smart",         x: 38, y: 68 },
+  { id: "modern",        x: 48, y: 62 },
+  { id: "contemporary",  x: 54, y: 52 },
+  { id: "fitted",        x: 52, y: 46 },
+  { id: "androgynous",   x: 38, y: 36 },
+  { id: "eclectic",      x: 54, y: 36 },
+  { id: "nostalgic",     x: 58, y: 34 },
+
+  // Sensual / Bold cluster (center-right)
+  { id: "sensual",       x: 74, y: 42 },
+  { id: "sexy",          x: 76, y: 50 },
+  { id: "bold",          x: 68, y: 36 },
+  { id: "striking",      x: 74, y: 58 },
+  { id: "confident",     x: 80, y: 58 },
+  { id: "powerful",      x: 78, y: 68 },
+  { id: "masculine",     x: 82, y: 68 },
+  { id: "adventurous",   x: 76, y: 76 },
+  { id: "tomboy",        x: 68, y: 52 },
+
+  // Vintage / Retro cluster (center)
+  { id: "vintage",       x: 56, y: 44 },
+  { id: "retro",         x: 50, y: 68 },
+  { id: "mod",           x: 60, y: 52 },
+  { id: "antique",       x: 56, y: 60 },
+  { id: "wabi-sabi",     x: 42, y: 84 },
+
+  // Minimal / Clean cluster (left-center)
+  { id: "minimal",       x: 14, y: 60 },
+  { id: "editorial",     x: 20, y: 52 },
+  { id: "clean",         x: 8,  y: 62 },
+  { id: "spare",         x: 6,  y: 72 },
+  { id: "understated",   x: 18, y: 68 },
+  { id: "neutral",       x: 10, y: 76 },
+  { id: "muted",         x: 20, y: 76 },
+  { id: "quiet",         x: 8,  y: 82 },
+  { id: "subtle",        x: 16, y: 82 },
+  { id: "simple",        x: 4,  y: 88 },
+  { id: "monochromatic", x: 24, y: 68 },
+  { id: "sleek",         x: 28, y: 72 },
+  { id: "streamlined",   x: 26, y: 78 },
+  { id: "sharp",         x: 22, y: 60 },
+  { id: "fluid",         x: 32, y: 78 },
+  { id: "draped",        x: 34, y: 84 },
+  { id: "modest",        x: 12, y: 88 },
+  { id: "zen",           x: 12, y: 70 },
+
+  // Streetwear / Urban cluster (center-bottom)
+  { id: "streetwear",    x: 54, y: 76 },
+  { id: "urban",         x: 48, y: 76 },
+  { id: "indie",         x: 60, y: 68 },
+  { id: "skater",        x: 64, y: 76 },
+  { id: "artsy",         x: 56, y: 86 },
+  { id: "creative",      x: 48, y: 86 },
+  { id: "alternative",   x: 42, y: 76 },
+  { id: "funky",         x: 66, y: 68 },
+  { id: "quirky",        x: 64, y: 84 },
+  { id: "fun",           x: 58, y: 90 },
+  { id: "artistic",      x: 52, y: 92 },
+  { id: "global",        x: 44, y: 92 },
+
+  // Sporty / Utility cluster (right-center)
+  { id: "sporty",        x: 86, y: 62 },
+  { id: "athleisure",    x: 90, y: 70 },
+  { id: "oversized",     x: 72, y: 72 },
+  { id: "workwear",      x: 80, y: 72 },
+  { id: "utility",       x: 84, y: 78 },
+
+  // Coastal / Tropical cluster (far-right)
+  { id: "coastal",       x: 92, y: 62 },
+  { id: "tropical",      x: 96, y: 60 },
+  { id: "surf",          x: 96, y: 68 },
+  { id: "nautical",      x: 96, y: 44 },
+  { id: "nordic",        x: 96, y: 36 },
+  { id: "equestrian",    x: 92, y: 68 },
+  { id: "western",       x: 96, y: 78 },
+
+  // Casual / Relaxed cluster (right-bottom)
+  { id: "casual",        x: 84, y: 86 },
+  { id: "relaxed",       x: 78, y: 86 },
+  { id: "comfortable",   x: 90, y: 86 },
+  { id: "laidback",      x: 80, y: 92 },
+  { id: "effortless",    x: 88, y: 82 },
+  { id: "carefree",      x: 72, y: 86 },
+  { id: "cool",          x: 70, y: 80 },
+  { id: "ease",          x: 86, y: 92 },
+  { id: "cozy",          x: 92, y: 92 },
+  { id: "warm",          x: 80, y: 98 },
+  { id: "calm",          x: 74, y: 92 },
+  { id: "harmonious",    x: 70, y: 94 },
+
+  // Bohemian / Natural cluster (left-bottom)
+  { id: "bohemian",      x: 26, y: 94 },
+  { id: "earthy",        x: 10, y: 94 },
+  { id: "organic",       x: 18, y: 96 },
+  { id: "natural",       x: 6,  y: 92 },
+  { id: "outdoorsy",     x: 22, y: 98 },
+  { id: "forest",        x: 34, y: 94 },
+  { id: "grounded",      x: 38, y: 86 },
+  { id: "folksy",        x: 44, y: 96 },
+  { id: "cottagecore",   x: 30, y: 88 },
+  { id: "sensible",      x: 26, y: 86 },
+  { id: "practical",     x: 18, y: 86 },
 ];
 
 const NODE_IDS = STYLE_NODES.map(n => n.id);
+const NODE_MAP = Object.fromEntries(STYLE_NODES.map(n => [n.id, n]));
 
 // ─── STYLES ─────────────────────────────────────────────────────────────────
 const GlobalStyles = () => (
@@ -128,16 +292,35 @@ const GlobalStyles = () => (
     .results-layout {
       display: grid;
       grid-template-columns: 1fr;
-      padding: 72px 0 88px;
       gap: 48px;
+      padding: 72px 0 88px;
     }
     @media (min-width: 860px) {
       .results-layout {
         grid-template-columns: 1fr 1fr;
-        gap: 80px;
+        gap: 64px;
+        align-items: stretch;
+        min-height: calc(100vh - 82px);
+        padding: 80px 0;
+      }
+    }
+
+    /* ── Constellation container ── */
+    .constellation-wrap {
+      width: 100%;
+      aspect-ratio: 1;
+    }
+    @media (min-width: 860px) {
+      .results-right {
+        display: flex;
         align-items: center;
-        padding: 0;
-        min-height: 100vh;
+        justify-content: center;
+      }
+      .constellation-wrap {
+        aspect-ratio: unset;
+        width: 100%;
+        height: 100%;
+        min-height: 400px;
       }
     }
 
@@ -202,11 +385,33 @@ const resizeImage = (file) =>
     img.src = URL.createObjectURL(file);
   });
 
+// Fallback: 17 nearest nodes when Claude doesn't return relevant words
+const getDefaultRelevant = (words) => {
+  const hNodes = STYLE_NODES.filter(n => words.includes(n.id));
+  if (hNodes.length === 0) return words;
+  const others = STYLE_NODES
+    .filter(n => !words.includes(n.id))
+    .map(n => ({ ...n, d: Math.min(...hNodes.map(h => Math.hypot(n.x - h.x, n.y - h.y))) }))
+    .sort((a, b) => a.d - b.d)
+    .slice(0, 17);
+  return [...words, ...others.map(n => n.id)];
+};
+
 const generateStyleWords = async (description, imageBase64 = null) => {
   const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
   if (!apiKey) return null;
 
-  const system = `You are a style analyst. Based on the user's description or image, choose exactly 3 words that best capture their aesthetic. You MUST choose from this list: ${NODE_IDS.join(", ")}. Return ONLY a valid JSON array of exactly 3 strings. Example: ["minimal","dark","editorial"]`;
+  const system = `You are a style analyst. Given a user's style description or image, choose words that best capture their aesthetic from the list below.
+
+You MUST only choose from this exact list: ${NODE_IDS.join(", ")}
+
+Return ONLY a valid JSON object in exactly this format:
+{"words":["word1","word2","word3"],"relevant":["word1","word2","word3","word4","word5","word6","word7","word8","word9","word10","word11","word12","word13","word14","word15","word16","word17","word18","word19","word20"]}
+
+Rules:
+- "words": exactly 3 words that BEST define their core aesthetic
+- "relevant": exactly 20 words total — include all 3 from "words", plus 17 more that paint a picture of the full aesthetic landscape around this person's taste. Spread these across diverse corners of the style universe: include some closely related words, some in adjacent territories, and a few from contrasting areas that still illuminate who they are by contrast. The goal is a constellation that feels like a natural sky of stars, not a tight cluster.
+- All 20 must come from the provided list`;
 
   const content = imageBase64
     ? [
@@ -226,64 +431,129 @@ const generateStyleWords = async (description, imageBase64 = null) => {
       },
       body: JSON.stringify({
         model: "claude-haiku-4-5-20251001",
-        max_tokens: 80,
+        max_tokens: 300,
         system,
         messages: [{ role: "user", content }],
       }),
     });
     if (!res.ok) return null;
     const data = await res.json();
-    const match = data.content[0].text.match(/\[[\s\S]*?\]/);
+    const match = data.content[0].text.match(/\{[\s\S]*?\}/);
     if (!match) return null;
     const parsed = JSON.parse(match[0]);
     const validSet = new Set(NODE_IDS);
-    const valid = parsed.filter(w => validSet.has(String(w).toLowerCase())).map(w => String(w).toLowerCase());
-    return valid.length === 3 ? valid : null;
+    const words = (parsed.words || [])
+      .map(w => String(w).toLowerCase())
+      .filter(w => validSet.has(w))
+      .slice(0, 3);
+    if (words.length !== 3) return null;
+    const relevant = [...new Set(
+      (parsed.relevant || [])
+        .map(w => String(w).toLowerCase())
+        .filter(w => validSet.has(w))
+    )].slice(0, 20);
+    // Ensure all 3 words are in relevant
+    const relevantWithWords = [...new Set([...words, ...relevant])].slice(0, 20);
+    return { words, relevant: relevantWithWords };
   } catch {
     return null;
   }
 };
 
-// ─── STATIC CONSTELLATION ────────────────────────────────────────────────────
-const Constellation = ({ highlightedWords }) => {
+// ─── CONSTELLATION ────────────────────────────────────────────────────────────
+// viewBox is 0 0 100 100 — node x/y map directly to SVG coordinates
+const Constellation = ({ highlightedWords, relevantWords }) => {
   const highlighted = new Set(highlightedWords || []);
-  const W = 400, H = 290;
-  const cx = (x) => (x / 100) * W;
-  const cy = (y) => (y / 100) * H;
+  const relevant = new Set(relevantWords || []);
+
+  // Determine which nodes to show
+  let visibleNodes;
+  if (relevant.size > 0) {
+    visibleNodes = STYLE_NODES.filter(n => relevant.has(n.id));
+  } else if (highlighted.size > 0) {
+    const hNodes = STYLE_NODES.filter(n => highlighted.has(n.id));
+    const others = STYLE_NODES
+      .filter(n => !highlighted.has(n.id))
+      .map(n => ({ ...n, d: Math.min(...hNodes.map(h => Math.hypot(n.x - h.x, n.y - h.y))) }))
+      .sort((a, b) => a.d - b.d)
+      .slice(0, 17);
+    visibleNodes = [...hNodes, ...others];
+  } else {
+    visibleNodes = STYLE_NODES;
+  }
+
   const hNodes = STYLE_NODES.filter(n => highlighted.has(n.id));
+  const showLabels = highlighted.size > 0 && relevant.size > 0;
+
+  // Determine label position to minimize edge-clipping and overlaps
+  const getLabelProps = (node) => {
+    const onRight = node.x > 58;
+    const onTop   = node.y < 12;
+    const onBot   = node.y > 88;
+    const textAnchor = onRight ? "end" : "start";
+    const dx = onRight ? -2.2 : 2.2;
+    const dy = onTop ? 4 : onBot ? -3.5 : -2.2;
+    return { dx, dy, textAnchor };
+  };
+
+  // Three connection lines between highlighted nodes (no filled polygon)
+  const renderConnections = () => {
+    if (hNodes.length !== 3) return null;
+    const [a, b, c] = hNodes;
+    const pairs = [[a, b], [b, c], [a, c]];
+    return pairs.map(([p1, p2], i) => (
+      <line
+        key={i}
+        x1={p1.x} y1={p1.y}
+        x2={p2.x} y2={p2.y}
+        stroke="#fff"
+        strokeWidth="0.25"
+        strokeDasharray="2.5 2"
+        opacity="0.35"
+      />
+    ));
+  };
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", display: "block" }}>
-      {hNodes.length === 3 && (
-        <polygon
-          points={hNodes.map(n => `${cx(n.x)},${cy(n.y)}`).join(" ")}
-          fill="rgba(255,255,255,0.05)"
-          stroke="#fff"
-          strokeWidth="0.7"
-          strokeDasharray="4 3"
-        />
-      )}
-      {STYLE_NODES.map((node) => {
+    <svg
+      viewBox="0 0 100 100"
+      width="100%"
+      height="100%"
+      style={{ display: "block", overflow: "visible" }}
+      preserveAspectRatio="xMidYMid meet"
+    >
+      {renderConnections()}
+
+      {visibleNodes.map((node) => {
         const isH = highlighted.has(node.id);
-        const nx = cx(node.x);
-        const ny = cy(node.y);
-        const anchorEnd = node.x > 55;
+        const showAll = relevant.size === 0;
+        const r = isH ? 1.3 : showLabels ? 0.6 : showAll ? 0.3 : 0.5;
+        const fill = isH ? "#fff" : showLabels ? "#5a5a5a" : "#333";
+        const { dx, dy, textAnchor } = getLabelProps(node);
+
         return (
           <g key={node.id}>
-            {isH && <circle cx={nx} cy={ny} r={13} fill="none" stroke="#fff" strokeWidth="0.5" opacity="0.2" />}
-            <circle cx={nx} cy={ny} r={isH ? 5 : 2.5} fill={isH ? "#fff" : "#777"} />
-            <text
-              x={anchorEnd ? nx - 8 : nx + 8}
-              y={ny - 8}
-              textAnchor={anchorEnd ? "end" : "start"}
-              fontSize="7.5"
-              fontFamily="DM Mono, monospace"
-              fill={isH ? "#fff" : "#888"}
-              fontWeight={isH ? "400" : "300"}
-              letterSpacing="0.03em"
-            >
-              {node.id}
-            </text>
+            {isH && (
+              <circle
+                cx={node.x} cy={node.y} r={5}
+                fill="none" stroke="#fff" strokeWidth="0.3" opacity="0.18"
+              />
+            )}
+            <circle cx={node.x} cy={node.y} r={r} fill={fill} />
+            {showLabels && (
+              <text
+                x={node.x + dx}
+                y={node.y + dy}
+                textAnchor={textAnchor}
+                fontSize="1.85"
+                fontFamily="DM Mono, monospace"
+                fill={isH ? "#fff" : "#555"}
+                fontWeight={isH ? "400" : "300"}
+                letterSpacing="0.03em"
+              >
+                {node.id}
+              </text>
+            )}
           </g>
         );
       })}
@@ -359,10 +629,9 @@ const AnimatedConstellation = ({ fullScreen = false }) => {
       ))}
 
       {STYLE_NODES.map((node) => {
-        const isGlow  = glowIds.has(node.id);
-        const nx      = cx(node.x);
-        const ny      = cy(node.y);
-        const anchorEnd = node.x > 55;
+        const isGlow = glowIds.has(node.id);
+        const nx     = cx(node.x);
+        const ny     = cy(node.y);
         return (
           <g key={node.id} style={{ transition: "opacity 0.3s" }}>
             {isGlow && (
@@ -373,22 +642,10 @@ const AnimatedConstellation = ({ fullScreen = false }) => {
             )}
             <circle
               cx={nx} cy={ny}
-              r={isGlow ? 5 : 2.5}
-              fill={isGlow ? "#fff" : "#777"}
+              r={isGlow ? 4 : 1.5}
+              fill={isGlow ? "#fff" : "#555"}
               style={{ transition: "fill 0.35s ease" }}
             />
-            <text
-              x={anchorEnd ? nx - 9 : nx + 9}
-              y={ny - 9}
-              textAnchor={anchorEnd ? "end" : "start"}
-              fontSize="8"
-              fontFamily="DM Mono, monospace"
-              fill={isGlow ? "#fff" : "#888"}
-              letterSpacing="0.04em"
-              style={{ transition: "fill 0.35s ease" }}
-            >
-              {node.id}
-            </text>
           </g>
         );
       })}
@@ -397,7 +654,7 @@ const AnimatedConstellation = ({ fullScreen = false }) => {
 };
 
 // ─── SHARE CARD ──────────────────────────────────────────────────────────────
-const createShareCard = async (words) => {
+const createShareCard = async (words, relevant) => {
   const W = 1080, H = 1920;
   const canvas = document.createElement("canvas");
   canvas.width = W; canvas.height = H;
@@ -428,47 +685,63 @@ const createShareCard = async (words) => {
     ty += (sizes[i] || 74) * 1.25;
   });
 
+  // Use relevant nodes; fall back to nearest if not provided
+  const relevantIds = relevant && relevant.length > 0 ? relevant : getDefaultRelevant(words);
   const highlighted = new Set(words);
-  const hNodes = STYLE_NODES.filter(n => highlighted.has(n.id));
-  const padL = 80, padR = 80, padTop = 730, padBot = 120;
-  const cW = W - padL - padR, cH = H - padTop - padBot;
-  const cx = (x) => padL + (x / 100) * cW;
-  const cy = (y) => padTop + (y / 100) * cH;
+  const visibleNodes = STYLE_NODES.filter(n => relevantIds.includes(n.id));
+  const hNodes = visibleNodes.filter(n => highlighted.has(n.id));
 
+  const padL = 80, padR = 80, padTop = 740, padBot = 80;
+  const cW = W - padL - padR, cH = H - padTop - padBot;
+  // Preserve aspect ratio (nodes live in a 100x100 space — fit square in available area)
+  const side = Math.min(cW, cH);
+  const offX = padL + (cW - side) / 2;
+  const offY = padTop + (cH - side) / 2;
+  const cx = (x) => offX + (x / 100) * side;
+  const cy = (y) => offY + (y / 100) * side;
+
+  // Three connection lines (no filled triangle)
   if (hNodes.length === 3) {
-    ctx.beginPath();
-    ctx.moveTo(cx(hNodes[0].x), cy(hNodes[0].y));
-    ctx.lineTo(cx(hNodes[1].x), cy(hNodes[1].y));
-    ctx.lineTo(cx(hNodes[2].x), cy(hNodes[2].y));
-    ctx.closePath();
-    ctx.fillStyle = "rgba(255,255,255,0.05)";
-    ctx.fill();
-    ctx.strokeStyle = "#fff";
-    ctx.lineWidth = 1.2;
-    ctx.setLineDash([7, 5]);
-    ctx.stroke();
-    ctx.setLineDash([]);
+    const [a, b, c] = hNodes;
+    const pairs = [[a, b], [b, c], [a, c]];
+    pairs.forEach(([p1, p2]) => {
+      ctx.beginPath();
+      ctx.moveTo(cx(p1.x), cy(p1.y));
+      ctx.lineTo(cx(p2.x), cy(p2.y));
+      ctx.strokeStyle = "rgba(255,255,255,0.35)";
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([12, 9]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    });
   }
 
-  STYLE_NODES.forEach(node => {
+  visibleNodes.forEach(node => {
     const isH = highlighted.has(node.id);
     const nx = cx(node.x), ny = cy(node.y);
     if (isH) {
       ctx.beginPath();
-      ctx.arc(nx, ny, 26, 0, Math.PI * 2);
-      ctx.strokeStyle = "rgba(255,255,255,0.2)";
+      ctx.arc(nx, ny, side * 0.05, 0, Math.PI * 2);
+      ctx.strokeStyle = "rgba(255,255,255,0.18)";
       ctx.lineWidth = 1;
+      ctx.setLineDash([]);
       ctx.stroke();
     }
     ctx.beginPath();
-    ctx.arc(nx, ny, isH ? 9 : 4.5, 0, Math.PI * 2);
+    ctx.arc(nx, ny, isH ? side * 0.013 : side * 0.006, 0, Math.PI * 2);
     ctx.fillStyle = isH ? "#fff" : "#3a3a3a";
     ctx.fill();
-    ctx.fillStyle = isH ? "#fff" : "#555";
-    ctx.font = `${isH ? "400" : "300"} 13px "DM Mono", monospace`;
-    const anchorEnd = node.x > 55;
-    ctx.textAlign = anchorEnd ? "right" : "left";
-    ctx.fillText(node.id, anchorEnd ? nx - 14 : nx + 14, ny - 14);
+
+    // Label
+    const onRight = node.x > 58;
+    const onTop   = node.y < 12;
+    const onBot   = node.y > 88;
+    const ldx = onRight ? -(side * 0.022) : (side * 0.022);
+    const ldy = onTop ? (side * 0.04) : onBot ? -(side * 0.035) : -(side * 0.022);
+    ctx.fillStyle = isH ? "#fff" : "#4a4a4a";
+    ctx.font = `${isH ? "400" : "300"} ${Math.round(side * 0.013)}px "DM Mono", monospace`;
+    ctx.textAlign = onRight ? "right" : "left";
+    ctx.fillText(node.id, nx + ldx, ny + ldy);
   });
   ctx.textAlign = "left";
 
@@ -476,7 +749,7 @@ const createShareCard = async (words) => {
   ctx.font = '300 15px "DM Mono", monospace';
   const mark = "taste.";
   const mw = ctx.measureText(mark).width;
-  ctx.fillText(mark, W - padR - mw, H - 80);
+  ctx.fillText(mark, W - padR - mw, H - 48);
 
   return canvas;
 };
@@ -490,11 +763,12 @@ export default function App() {
   const [photo, setPhoto]                         = useState(null);
   const [photoPreview, setPhotoPreview]           = useState(null);
   const [styleWords, setStyleWords]               = useState([]);
+  const [relevantWords, setRelevantWords]         = useState([]);
   const [error, setError]                         = useState("");
-  const [sharing, setSharing]       = useState(false);
-  const [waitlistError, setWaitlistError] = useState("");
-  const [typed, setTyped]           = useState("");
-  const [heroReady, setHeroReady]   = useState(false);
+  const [sharing, setSharing]                     = useState(false);
+  const [waitlistError, setWaitlistError]         = useState("");
+  const [typed, setTyped]                         = useState("");
+  const [heroReady, setHeroReady]                 = useState(false);
   const fileRef = useRef(null);
 
   const HERO_TEXT = "shop with people who get it.";
@@ -513,7 +787,7 @@ export default function App() {
   const handleShare = async () => {
     setSharing(true);
     try {
-      const canvas = await createShareCard(styleWords);
+      const canvas = await createShareCard(styleWords, relevantWords);
       const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
       const file = new File([blob], "my-taste.png", { type: "image/png" });
       if (navigator.share && navigator.canShare?.({ files: [file] })) {
@@ -544,12 +818,14 @@ export default function App() {
     setError("");
     setStep("generating");
 
-    const [words] = await Promise.all([
+    const [result] = await Promise.all([
       generateStyleWords(description, photo),
       new Promise(resolve => setTimeout(resolve, 2500)),
     ]);
-    const finalWords = words || ["minimal", "editorial", "dark"];
+    const finalWords    = result?.words    || ["minimal", "editorial", "dark"];
+    const finalRelevant = result?.relevant || getDefaultRelevant(finalWords);
     setStyleWords(finalWords);
+    setRelevantWords(finalRelevant);
     setStep("email");
   };
 
@@ -688,7 +964,7 @@ export default function App() {
                 </div>
 
                 <div className="split-right" style={{ opacity: 0.65 }}>
-                  <Constellation highlightedWords={[]} />
+                  <Constellation highlightedWords={[]} relevantWords={[]} />
                 </div>
               </div>
             )}
@@ -764,11 +1040,11 @@ export default function App() {
               </div>
             )}
 
-            {/* ── RESULTS ──────────────────────────────────────────────────── */}
+          {/* ── RESULTS ────────────────────────────────────────────────── */}
             {step === "results" && (
               <div className="results-layout fade-up">
                 <div>
-                  <p style={{ fontSize: 11, letterSpacing: "0.14em", color: "#999", marginBottom: 20, textTransform: "uppercase" }}>
+                  <p style={{ fontSize: 11, letterSpacing: "0.14em", color: "#999", marginBottom: 36, textTransform: "uppercase" }}>
                     your style is
                   </p>
                   {styleWords.map((word, i) => (
@@ -812,11 +1088,10 @@ export default function App() {
                   </div>
                 </div>
 
-                <div>
-                  <p style={{ fontSize: 10, letterSpacing: "0.12em", color: "#bbb", marginBottom: 14, textTransform: "uppercase" }}>
-                    in the constellation of taste
-                  </p>
-                  <Constellation highlightedWords={styleWords} />
+                <div className="results-right">
+                  <div className="constellation-wrap">
+                    <Constellation highlightedWords={styleWords} relevantWords={relevantWords} />
+                  </div>
                 </div>
               </div>
             )}
