@@ -765,6 +765,7 @@ export default function App() {
   const [error, setError]                         = useState("");
   const [sharing, setSharing]                     = useState(false);
   const [waitlistError, setWaitlistError]         = useState("");
+  const [signupId, setSignupId]                   = useState(null);
   const [typed, setTyped]                         = useState("");
   const [heroReady, setHeroReady]                 = useState(false);
   const fileRef = useRef(null);
@@ -824,7 +825,18 @@ export default function App() {
     const finalRelevant = result?.relevant || getDefaultRelevant(finalWords);
     setStyleWords(finalWords);
     setRelevantWords(finalRelevant);
-    setStep("email");
+
+    if (supabase) {
+      const { error: err } = await supabase.from("style_results").insert({
+        name: name.trim(),
+        email: email.trim(),
+        description: description.trim(),
+        style_words: finalWords,
+      });
+      if (err) console.error("Supabase style_results insert error:", err.message, err.code, err.details);
+    }
+
+    setStep("results");
   };
 
   const handleWaitlist = async (e) => {
@@ -834,16 +846,19 @@ export default function App() {
     setWaitlistError("");
 
     if (supabase) {
+      const id = crypto.randomUUID();
       const { error: err } = await supabase.from("signups").insert({
+        id,
         name: name.trim(),
         email: email.trim(),
-        description: description.trim(),
-        style_words: styleWords,
+        description: "",
+        style_words: [],
       });
-      if (err) console.error("Supabase error:", err);
+      if (err) console.error("Supabase error:", err.message, err.code, err.details);
+      else setSignupId(id);
     }
 
-    setStep("results");
+    setStep("joined");
   };
 
   return (
@@ -898,11 +913,11 @@ export default function App() {
                   <p style={{ fontSize: 13, color: "#888", lineHeight: 1.8, marginBottom: 44, maxWidth: 480, letterSpacing: "0.02em", opacity: heroReady ? 1 : 0, animation: heroReady ? "fadeUp 0.55s cubic-bezier(0.16,1,0.3,1) 0s both" : "none" }}>
                     discover style through people who actually share your taste
                   </p>
-                  <button onClick={() => setStep("style")} style={{ ...btnStyle, opacity: heroReady ? 1 : 0, animation: heroReady ? "fadeUp 0.55s cubic-bezier(0.16,1,0.3,1) 0.18s both" : "none" }}>
-                    Map your taste →
+                  <button onClick={() => setStep("waitlist")} style={{ ...btnStyle, opacity: heroReady ? 1 : 0, animation: heroReady ? "fadeUp 0.55s cubic-bezier(0.16,1,0.3,1) 0.18s both" : "none" }}>
+                    Join the waitlist →
                   </button>
                   <p style={{ fontSize: 11, color: "#555", marginTop: 16, letterSpacing: "0.04em", lineHeight: 1.6, opacity: heroReady ? 1 : 0, animation: heroReady ? "fadeUp 0.55s cubic-bezier(0.16,1,0.3,1) 0.32s both" : "none" }}>
-                    sign up and get early access when we launch
+                    sign up to get early access when we launch <br /> (and a special sneak preview)
                   </p>
                 </div>
               </div>
@@ -911,27 +926,6 @@ export default function App() {
             {/* ── STYLE INPUT ──────────────────────────────────────────────── */}
             {step === "style" && (
               <div className="fade-up" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "72px 0 88px", minHeight: "calc(100vh - 82px)", position: "relative" }}>
-                <button
-                  onClick={() => setStep("home")}
-                  style={{
-                    position: "absolute",
-                    top: 28,
-                    left: 0,
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                    color: "#aaa",
-                    fontSize: 20,
-                    padding: 0,
-                    lineHeight: 1,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                  }}
-                  aria-label="go back"
-                >
-                  ←
-                </button>
                 <h2 style={{
                   fontFamily: "'Playfair Display', serif",
                   fontStyle: "italic",
@@ -996,11 +990,11 @@ export default function App() {
               </div>
             )}
 
-            {/* ── EMAIL GATE ───────────────────────────────────────────────── */}
-            {step === "email" && (
-              <div className="generating-layout fade-up" style={{ gap: 0, position: "relative" }}>
+            {/* ── WAITLIST ─────────────────────────────────────────────────── */}
+            {step === "waitlist" && (
+              <div className="fade-up" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "72px 0 88px", minHeight: "calc(100vh - 82px)", position: "relative" }}>
                 <button
-                  onClick={() => setStep("style")}
+                  onClick={() => setStep("home")}
                   style={{
                     position: "absolute",
                     top: 28,
@@ -1020,58 +1014,74 @@ export default function App() {
                 >
                   ←
                 </button>
-                <p style={{ fontSize: 11, letterSpacing: "0.14em", color: "#999", marginBottom: 16, textTransform: "uppercase" }}>
-                  your style is
+                <h2 style={{
+                  fontFamily: "'Playfair Display', serif",
+                  fontStyle: "italic",
+                  fontWeight: 400,
+                  fontSize: "clamp(28px, 4vw, 42px)",
+                  lineHeight: 1.2,
+                  marginBottom: 14,
+                  letterSpacing: "-0.01em",
+                  textAlign: "center",
+                }}>
+                  join the waitlist
+                </h2>
+                <p style={{ fontSize: 13, color: "#888", lineHeight: 1.8, marginBottom: 40, maxWidth: 380, letterSpacing: "0.02em", textAlign: "center" }}>
+                  enter your email to get early access when we launch
                 </p>
-                {styleWords.map((word, i) => (
-                  <div
-                    key={word}
-                    className="word-reveal"
-                    style={{
-                      animationDelay: `${i * 0.22}s`,
-                      fontFamily: "'Playfair Display', serif",
-                      fontStyle: "italic",
-                      fontWeight: 400,
-                      fontSize: "clamp(38px, 5.5vw, 60px)",
-                      lineHeight: 1.1,
-                      letterSpacing: "-0.02em",
-                      textAlign: "center",
-                    }}
-                  >
-                    {word}
+                <form onSubmit={handleWaitlist} style={{ width: "100%", maxWidth: 400 }}>
+                  <div style={{ marginBottom: 14 }}>
+                    <input
+                      type="text"
+                      placeholder="your name"
+                      value={name}
+                      onChange={e => setName(e.target.value)}
+                      style={inputStyle}
+                      autoComplete="name"
+                    />
                   </div>
-                ))}
+                  <div style={{ marginBottom: 28 }}>
+                    <input
+                      type="email"
+                      placeholder="your email"
+                      value={email}
+                      onChange={e => setEmail(e.target.value)}
+                      style={inputStyle}
+                      autoComplete="email"
+                    />
+                  </div>
+                  {waitlistError && <p style={{ fontSize: 11, color: "#999", marginBottom: 12 }}>{waitlistError}</p>}
+                  <button type="submit" style={{ ...btnStyle, width: "100%", textAlign: "center" }}>
+                    join →
+                  </button>
+                </form>
+              </div>
+            )}
 
-                <div style={{ marginTop: 52, width: "100%", maxWidth: 400 }}>
-                  <p style={{ fontSize: 11, color: "#555", letterSpacing: "0.04em", marginBottom: 28, lineHeight: 1.6, textAlign: "center" }}>
-                    enter your email to reveal your style map and get early access when we launch
-                  </p>
-                  <form onSubmit={handleWaitlist}>
-                    <div style={{ marginBottom: 14 }}>
-                      <input
-                        type="text"
-                        placeholder="your name"
-                        value={name}
-                        onChange={e => setName(e.target.value)}
-                        style={inputStyle}
-                        autoComplete="name"
-                      />
-                    </div>
-                    <div style={{ marginBottom: 24 }}>
-                      <input
-                        type="email"
-                        placeholder="your email"
-                        value={email}
-                        onChange={e => setEmail(e.target.value)}
-                        style={inputStyle}
-                        autoComplete="email"
-                      />
-                    </div>
-                    {waitlistError && <p style={{ fontSize: 11, color: "#999", marginBottom: 12 }}>{waitlistError}</p>}
-                    <button type="submit" style={{ ...btnStyle, width: "100%", textAlign: "center" }}>
-                      reveal my style map →
-                    </button>
-                  </form>
+            {/* ── JOINED ───────────────────────────────────────────────── */}
+            {step === "joined" && (
+              <div className="fade-up" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "72px 0 88px", minHeight: "calc(100vh - 82px)", textAlign: "center" }}>
+                <h2 style={{
+                  fontFamily: "'Playfair Display', serif",
+                  fontStyle: "italic",
+                  fontWeight: 400,
+                  fontSize: "clamp(28px, 4vw, 42px)",
+                  lineHeight: 1.2,
+                  marginBottom: 20,
+                  letterSpacing: "-0.01em",
+                }}>
+                  thank you for joining!
+                </h2>
+                <p style={{ fontSize: 13, color: "#888", lineHeight: 1.8, marginBottom: 48, maxWidth: 360, letterSpacing: "0.02em" }}>
+                  we'll be in touch soon. <br /> <br />in the meantime, do you want a sneak preview?
+                </p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 12, width: "100%", maxWidth: 320 }}>
+                  <button onClick={() => setStep("style")} style={{ ...btnStyle, width: "100%", textAlign: "center" }}>
+                    Yes, map my style →
+                  </button>
+                  <button onClick={() => setStep("home")} style={{ ...ghostBtnStyle, width: "100%", textAlign: "center" }}>
+                    No, back to home
+                  </button>
                 </div>
               </div>
             )}
