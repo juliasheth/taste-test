@@ -938,8 +938,6 @@ export default function App() {
         id,
         name: name.trim(),
         email: email.trim(),
-        description: "",
-        style_words: [],
       });
       if (err) console.error("Supabase signups error:", err.message);
       else setSignupId(id);
@@ -1011,23 +1009,20 @@ export default function App() {
     setStylePercentages(finalPercentages);
 
     if (supabase) {
-      const thisOrThatData = thisThatQuestions?.map((q, i) => ({
-        situation: q.situation,
-        optionA: q.optionA,
-        optionB: q.optionB,
-        answer: thisThatAnswers[i],
-        chosen: thisThatAnswers[i] === "A" ? q.optionA : q.optionB,
-      })) || [];
+      const formatQuestion = (q) =>
+        `at ${q.situation}... ${q.optionA} OR ${q.optionB}`;
 
       const { error: err } = await supabase.from("taste_results").insert({
         signup_id: signupId || null,
-        name: name.trim(),
-        email: email.trim(),
         description: description.trim(),
-        this_or_that: thisOrThatData,
-        looking_for: lookingFor.trim(),
+        question_1: thisThatQuestions?.[0] ? formatQuestion(thisThatQuestions[0]) : null,
+        answer_1: thisThatAnswers[0] === "A" ? thisThatQuestions?.[0]?.optionA : thisThatQuestions?.[0]?.optionB,
+        question_2: thisThatQuestions?.[1] ? formatQuestion(thisThatQuestions[1]) : null,
+        answer_2: thisThatAnswers[1] === "A" ? thisThatQuestions?.[1]?.optionA : thisThatQuestions?.[1]?.optionB,
+        question_3: thisThatQuestions?.[2] ? formatQuestion(thisThatQuestions[2]) : null,
+        answer_3: thisThatAnswers[2] === "A" ? thisThatQuestions?.[2]?.optionA : thisThatQuestions?.[2]?.optionB,
         style_words: finalWords,
-        relevant_words: finalRelevant,
+        archetype: finalArchetype,
       });
       if (err) console.error("Supabase taste_results error:", err.message);
     }
