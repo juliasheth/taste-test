@@ -1107,10 +1107,10 @@ export default function App() {
                   what if you didn't have to spend hours digging through search results, social media posts, and brand websites to find a piece that fits your style?
                 </p>
                 <button onClick={() => setStep("email")} style={{ ...btnStyle, opacity: heroReady ? 1 : 0, animation: heroReady ? "fadeUp 0.55s cubic-bezier(0.16,1,0.3,1) 0.18s both" : "none" }}>
-                  join the waitlist →
+                  take the taste test →
                 </button>
                 <p style={{ fontSize: 11, color: "#555", marginTop: 16, letterSpacing: "0.04em", lineHeight: 1.6, opacity: heroReady ? 1 : 0, animation: heroReady ? "fadeUp 0.55s cubic-bezier(0.16,1,0.3,1) 0.32s both" : "none" }}>
-                  sign up to get early access <br /> (and to get your taste profile today)
+                  take the test to get your taste profile today <br /> and to get early access when we launch
                 </p>
               </div>
             </div>
@@ -1133,7 +1133,7 @@ export default function App() {
                 let's get started
               </h2>
               <p style={{ fontSize: 13, color: "#888", lineHeight: 1.8, marginBottom: 40, maxWidth: 380, letterSpacing: "0.02em", textAlign: "center" }}>
-                enter your email to get early access when we launch and to get your taste profile today
+                enter your email to get your taste profile today (and get early access when we officially launch)
               </p>
               <form onSubmit={handleEmail} style={{ width: "100%", maxWidth: 400 }}>
                 <div style={{ marginBottom: 14 }}>
