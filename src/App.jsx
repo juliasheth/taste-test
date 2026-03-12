@@ -252,31 +252,6 @@ const GlobalStyles = () => (
       .home-hero { padding: 80px 0; }
     }
 
-    /* ── Split layout (style input) ── */
-    .split-layout {
-      display: grid;
-      grid-template-columns: 1fr;
-      min-height: 100vh;
-    }
-    .split-left {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      padding: 88px 0 64px;
-    }
-    .split-right { display: none; }
-
-    @media (min-width: 860px) {
-      .split-layout { grid-template-columns: 1fr 1fr; gap: 80px; }
-      .split-left   { padding: 80px 0; }
-      .split-right  {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 80px 0;
-      }
-    }
-
     /* ── Generating ── */
     .generating-layout {
       min-height: 100vh;
@@ -286,23 +261,6 @@ const GlobalStyles = () => (
       justify-content: center;
       gap: 40px;
       padding: 60px 0;
-    }
-
-    /* ── Results ── */
-    .results-layout {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 48px;
-      padding: 72px 0 88px;
-    }
-    @media (min-width: 860px) {
-      .results-layout {
-        grid-template-columns: 1fr 1fr;
-        gap: 64px;
-        align-items: stretch;
-        min-height: calc(100vh - 82px);
-        padding: 80px 0;
-      }
     }
 
     /* ── Constellation container ── */
@@ -397,28 +355,36 @@ const getDefaultRelevant = (words) => {
   return [...words, ...others.map(n => n.id)];
 };
 
-const generateStyleWords = async (description, imageBase64 = null) => {
+// ─── CLAUDE: GENERATE THIS-OR-THAT QUESTIONS ─────────────────────────────────
+const generateThisThatQuestions = async (photos, description) => {
   const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
   if (!apiKey) return null;
 
-  const system = `You are a style analyst. Given a user's style description or image, choose words that best capture their aesthetic from the list below.
+  const content = [];
+  for (const photo of photos) {
+    if (photo) {
+      content.push({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: photo } });
+    }
+  }
+  const textPrompt = description
+    ? `Here are my outfit photos. Style notes: "${description}". Generate 3 this-or-that questions based on my style.`
+    : "Here are my outfit photos. Generate 3 this-or-that questions based on my style.";
+  content.push({ type: "text", text: textPrompt });
 
-You MUST only choose from this exact list: ${NODE_IDS.join(", ")}
+  const system = `You are a style analyst. Based on the user's outfit photos, generate 3 "this or that" style questions to map their taste.
 
-Return ONLY a valid JSON object in exactly this format:
-{"words":["word1","word2","word3"],"relevant":["word1","word2","word3","word4","word5","word6","word7","word8","word9","word10","word11","word12","word13","word14","word15","word16","word17","word18","word19","word20"]}
+Each question names a specific real-world situation and presents two contrasting outfit options (A and B). The options should reflect genuinely different aesthetics — different silhouettes, fabrics, and moods — inspired by what you can observe from their photos.
 
-Rules:
-- "words": exactly 3 words that BEST define their core aesthetic
-- "relevant": exactly 20 words total — include all 3 from "words", plus 17 more that paint a picture of the full aesthetic landscape around this person's taste. Spread these across diverse corners of the style universe: include some closely related words, some in adjacent territories, and a few from contrasting areas that still illuminate who they are by contrast. The goal is a constellation that feels like a natural sky of stars, not a tight cluster.
-- All 20 must come from the provided list`;
+Keep outfit descriptions concise but specific: mention 2-3 key pieces or details (e.g. "oversized vintage blazer, straight-leg jeans, white sneakers" vs "fitted silk top, tailored trousers, kitten heels").
 
-  const content = imageBase64
-    ? [
-        { type: "image", source: { type: "base64", media_type: "image/jpeg", data: imageBase64 } },
-        { type: "text", text: description ? `Style description: ${description}` : "Analyze the aesthetic in this image." },
-      ]
-    : description;
+Make the situations feel real and relatable — things like "a casual lunch with friends", "a first date at a wine bar", "running errands on a Saturday morning", "a gallery opening", "a lazy Sunday at home but make it cute".
+
+Return ONLY valid JSON in this exact format, no other text:
+{"questions":[
+  {"situation":"...","optionA":"...","optionB":"..."},
+  {"situation":"...","optionA":"...","optionB":"..."},
+  {"situation":"...","optionA":"...","optionB":"..."}
+]}`;
 
   try {
     const res = await fetch("https://api.anthropic.com/v1/messages", {
@@ -431,7 +397,80 @@ Rules:
       },
       body: JSON.stringify({
         model: "claude-haiku-4-5-20251001",
-        max_tokens: 300,
+        max_tokens: 600,
+        system,
+        messages: [{ role: "user", content }],
+      }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const match = data.content[0].text.match(/\{[\s\S]*\}/);
+    if (!match) return null;
+    const parsed = JSON.parse(match[0]);
+    if (!Array.isArray(parsed.questions) || parsed.questions.length !== 3) return null;
+    return parsed.questions;
+  } catch {
+    return null;
+  }
+};
+
+// ─── CLAUDE: GENERATE STYLE WORDS ────────────────────────────────────────────
+const generateStyleWords = async (photos, description, thisThatQuestions, thisThatAnswers, lookingFor) => {
+  const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
+  if (!apiKey) return null;
+
+  const content = [];
+  for (const photo of photos) {
+    if (photo) {
+      content.push({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: photo } });
+    }
+  }
+
+  let contextText = "";
+  if (description) contextText += `Style notes: ${description}\n\n`;
+  if (thisThatQuestions && thisThatAnswers) {
+    contextText += "This-or-that answers:\n";
+    thisThatQuestions.forEach((q, i) => {
+      const answer = thisThatAnswers[i];
+      if (answer) {
+        const chosen = answer === "A" ? q.optionA : q.optionB;
+        contextText += `- In "${q.situation}": chose "${chosen}"\n`;
+      }
+    });
+    contextText += "\n";
+  }
+  if (lookingFor && lookingFor.trim()) {
+    contextText += `Currently looking for: ${lookingFor.trim()}`;
+  }
+
+  content.push({ type: "text", text: contextText || "Analyze the aesthetic in these images." });
+
+  const system = `You are a style analyst. Given a user's outfit photos, style answers, and preferences, analyze their aesthetic and return a JSON object.
+
+Style word list — you MUST only choose from this exact list: ${NODE_IDS.join(", ")}
+
+Return ONLY a valid JSON object in exactly this format:
+{"words":["word1","word2","word3"],"relevant":["word1","word2","word3","word4","word5","word6","word7","word8","word9","word10","word11","word12","word13","word14","word15","word16","word17","word18","word19","word20"],"archetype":"The X Y","subtitle":"One punchy sentence about their style.","percentages":[45,32,23]}
+
+Rules:
+- "words": exactly 3 words from the provided list that BEST define their core aesthetic
+- "relevant": exactly 20 words total — include all 3 from "words", plus 17 more that paint a picture of the full aesthetic landscape. Spread across diverse corners of the style universe. All 20 must come from the provided list.
+- "archetype": a 2-4 word label starting with "The" (e.g. "The Dark Romantic", "The Quiet Minimalist"). Should feel like a real style identity.
+- "subtitle": a short, punchy one-liner (10-15 words) based on their actual answers — concrete and specific, not vague. E.g. "Always dressed for a gallery opening you're 20 minutes late to."
+- "percentages": 3 integers in the same order as "words" that sum to exactly 100. Weight them meaningfully — the dominant aesthetic gets the most.`;
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true",
+      },
+      body: JSON.stringify({
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: 500,
         system,
         messages: [{ role: "user", content }],
       }),
@@ -452,9 +491,12 @@ Rules:
         .map(w => String(w).toLowerCase())
         .filter(w => validSet.has(w))
     )].slice(0, 20);
-    // Ensure all 3 words are in relevant
     const relevantWithWords = [...new Set([...words, ...relevant])].slice(0, 20);
-    return { words, relevant: relevantWithWords };
+    const archetype = typeof parsed.archetype === "string" ? parsed.archetype.trim() : "The Style Explorer";
+    const subtitle = typeof parsed.subtitle === "string" ? parsed.subtitle.trim() : "";
+    const rawPct = Array.isArray(parsed.percentages) ? parsed.percentages.map(Number) : [];
+    const percentages = rawPct.length === 3 && rawPct.every(n => !isNaN(n)) ? rawPct : [50, 30, 20];
+    return { words, relevant: relevantWithWords, archetype, subtitle, percentages };
   } catch {
     return null;
   }
@@ -466,7 +508,6 @@ const Constellation = ({ highlightedWords, relevantWords }) => {
   const highlighted = new Set(highlightedWords || []);
   const relevant = new Set(relevantWords || []);
 
-  // Determine which nodes to show
   let visibleNodes;
   if (relevant.size > 0) {
     visibleNodes = STYLE_NODES.filter(n => relevant.has(n.id));
@@ -485,7 +526,6 @@ const Constellation = ({ highlightedWords, relevantWords }) => {
   const hNodes = STYLE_NODES.filter(n => highlighted.has(n.id));
   const showLabels = highlighted.size > 0 && relevant.size > 0;
 
-  // Determine label position to minimize edge-clipping and overlaps
   const getLabelProps = (node) => {
     const onRight = node.x > 58;
     const onTop   = node.y < 12;
@@ -496,7 +536,6 @@ const Constellation = ({ highlightedWords, relevantWords }) => {
     return { dx, dy, textAnchor };
   };
 
-  // Three connection lines between highlighted nodes (no filled polygon)
   const renderConnections = () => {
     if (hNodes.length !== 3) return null;
     const [a, b, c] = hNodes;
@@ -523,7 +562,6 @@ const Constellation = ({ highlightedWords, relevantWords }) => {
       preserveAspectRatio="xMidYMid meet"
     >
       {renderConnections()}
-
       {visibleNodes.map((node) => {
         const isH = highlighted.has(node.id);
         const showAll = relevant.size === 0;
@@ -627,7 +665,6 @@ const AnimatedConstellation = ({ fullScreen = false }) => {
           style={{ animation: "lineIn 0.9s ease forwards" }}
         />
       ))}
-
       {STYLE_NODES.map((node) => {
         const isGlow = glowIds.has(node.id);
         const nx     = cx(node.x);
@@ -654,61 +691,119 @@ const AnimatedConstellation = ({ fullScreen = false }) => {
 };
 
 // ─── SHARE CARD ──────────────────────────────────────────────────────────────
-const createShareCard = async (words, relevant) => {
+const createShareCard = async (words, relevant, archetype, percentages, userName) => {
   const W = 1080, H = 1920;
   const canvas = document.createElement("canvas");
   canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext("2d");
 
   await Promise.all([
-    document.fonts.load('italic 400 80px "Playfair Display"'),
-    document.fonts.load('300 18px "DM Mono"'),
+    document.fonts.load('italic 400 120px "Playfair Display"'),
+    document.fonts.load('400 28px "DM Mono"'),
+    document.fonts.load('300 22px "DM Mono"'),
   ]);
 
+  // Background
   ctx.fillStyle = "#0a0a0a";
   ctx.fillRect(0, 0, W, H);
 
-  ctx.fillStyle = "#fff";
-  ctx.font = 'italic 400 72px "Playfair Display", serif';
-  ctx.fillText("my style map", 80, 130);
+  const PAD = 88;
+  const INNER_W = W - PAD * 2;
+  let y = 90;
 
-  ctx.fillStyle = "#aaa";
-  ctx.font = '300 22px "DM Mono", monospace';
-  ctx.fillText("GENERATED BY COVEY", 82, 222);
+  const dashedLine = (yPos) => {
+    ctx.beginPath();
+    ctx.setLineDash([14, 10]);
+    ctx.moveTo(PAD, yPos);
+    ctx.lineTo(W - PAD, yPos);
+    ctx.strokeStyle = "#2e2e2e";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.setLineDash([]);
+  };
 
-  const sizes = [120, 104, 90];
-  let ty = 360;
-  words.forEach((word, i) => {
+  const drawReceiptRow = (label, pct, rowY, fontSize) => {
+    const pctText = pct + "%";
+    ctx.font = `400 ${fontSize}px "DM Mono", monospace`;
+    const labelW = ctx.measureText(label).width;
+    const pctW = ctx.measureText(pctText).width;
+    const dotChar = ".";
+    const dotW = ctx.measureText(dotChar).width;
+    const available = INNER_W - labelW - pctW - 24;
+    const numDots = Math.max(0, Math.floor(available / dotW));
+
     ctx.fillStyle = "#fff";
-    ctx.font = `italic 400 ${sizes[i] || 74}px "Playfair Display", serif`;
-    ctx.fillText(word, 80, ty);
-    ty += (sizes[i] || 74) * 1.25;
+    ctx.textAlign = "left";
+    ctx.fillText(label, PAD, rowY);
+    ctx.fillStyle = "#3a3a3a";
+    ctx.fillText(dotChar.repeat(numDots), PAD + labelW + 12, rowY);
+    ctx.fillStyle = "#aaa";
+    ctx.textAlign = "right";
+    ctx.fillText(pctText, W - PAD, rowY);
+    ctx.textAlign = "left";
+  };
+
+  // ── HEADER ────────────────────────────────────────────────────
+  ctx.fillStyle = "#555";
+  ctx.font = '300 22px "DM Mono", monospace';
+  ctx.textAlign = "center";
+  ctx.fillText(" YOUR TASTE PROFILE", W / 2, y);
+  y += 32;
+
+  const dateStr = new Date().toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" }).replace(/\//g, ".");
+  ctx.fillStyle = "#444";
+  ctx.font = '300 20px "DM Mono", monospace';
+  ctx.fillText(dateStr, W / 2, y);
+  ctx.textAlign = "left";
+  y += 52;
+
+  dashedLine(y); y += 68;
+
+  // ── ARCHETYPE ─────────────────────────────────────────────────
+  ctx.fillStyle = "#fff";
+  ctx.font = 'italic 400 96px "Playfair Display", serif';
+  ctx.fillText(archetype || "The Style Explorer", PAD, y);
+  y += 52;
+
+  dashedLine(y); y += 60;
+
+  // ── STYLE BREAKDOWN ───────────────────────────────────────────
+  const firstName = (userName || "your").split(" ")[0].toLowerCase();
+  ctx.fillStyle = "#555";
+  ctx.font = '300 24px "DM Mono", monospace';
+  ctx.fillText(`${firstName}'s style is:`, PAD, y);
+  y += 56;
+
+  const rowSizes = [52, 44, 38];
+  words.forEach((word, i) => {
+    drawReceiptRow(word.toUpperCase(), percentages?.[i] ?? [50, 30, 20][i], y, rowSizes[i]);
+    y += rowSizes[i] * 1.6;
   });
 
-  // Use relevant nodes; fall back to nearest if not provided
+  y += 20;
+  dashedLine(y); y += 60;
+
+  // ── CONSTELLATION ─────────────────────────────────────────────
   const relevantIds = relevant && relevant.length > 0 ? relevant : getDefaultRelevant(words);
   const highlighted = new Set(words);
   const visibleNodes = STYLE_NODES.filter(n => relevantIds.includes(n.id));
   const hNodes = visibleNodes.filter(n => highlighted.has(n.id));
 
-  const padL = 80, padR = 80, padTop = 740, padBot = 80;
-  const cW = W - padL - padR, cH = H - padTop - padBot;
-  // Preserve aspect ratio (nodes live in a 100x100 space — fit square in available area)
-  const side = Math.min(cW, cH);
-  const offX = padL + (cW - side) / 2;
-  const offY = padTop + (cH - side) / 2;
-  const cx = (x) => offX + (x / 100) * side;
-  const cy = (y) => offY + (y / 100) * side;
+  const cPadBot = 160;
+  const cRegionH = H - y - cPadBot;
+  const side = Math.min(INNER_W, cRegionH);
+  const offX = PAD + (INNER_W - side) / 2;
+  const offY = y + (cRegionH - side) / 2;
+  const cx = (px) => offX + (px / 100) * side;
+  const cy = (py) => offY + (py / 100) * side;
 
-  // Three connection lines (no filled triangle)
-  if (hNodes.length === 3) {
-    const [a, b, c] = hNodes;
-    const pairs = [[a, b], [b, c], [a, c]];
+  if (hNodes.length >= 2) {
+    const pairs = hNodes.flatMap((n, i) => hNodes.slice(i + 1).map(m => [n, m]));
     pairs.forEach(([p1, p2]) => {
       ctx.beginPath();
       ctx.moveTo(cx(p1.x), cy(p1.y));
       ctx.lineTo(cx(p2.x), cy(p2.y));
-      ctx.strokeStyle = "rgba(255,255,255,0.35)";
+      ctx.strokeStyle = "rgba(255,255,255,0.25)";
       ctx.lineWidth = 1.5;
       ctx.setLineDash([12, 9]);
       ctx.stroke();
@@ -722,55 +817,73 @@ const createShareCard = async (words, relevant) => {
     if (isH) {
       ctx.beginPath();
       ctx.arc(nx, ny, side * 0.05, 0, Math.PI * 2);
-      ctx.strokeStyle = "rgba(255,255,255,0.18)";
+      ctx.strokeStyle = "rgba(255,255,255,0.12)";
       ctx.lineWidth = 1;
       ctx.setLineDash([]);
       ctx.stroke();
     }
     ctx.beginPath();
     ctx.arc(nx, ny, isH ? side * 0.013 : side * 0.006, 0, Math.PI * 2);
-    ctx.fillStyle = isH ? "#fff" : "#3a3a3a";
+    ctx.fillStyle = isH ? "#fff" : "#2e2e2e";
     ctx.fill();
 
-    // Label
     const onRight = node.x > 58;
     const onTop   = node.y < 12;
     const onBot   = node.y > 88;
     const ldx = onRight ? -(side * 0.022) : (side * 0.022);
     const ldy = onTop ? (side * 0.04) : onBot ? -(side * 0.035) : -(side * 0.022);
-    ctx.fillStyle = isH ? "#fff" : "#4a4a4a";
+    ctx.fillStyle = isH ? "#fff" : "#3a3a3a";
     ctx.font = `${isH ? "400" : "300"} ${Math.round(side * 0.013)}px "DM Mono", monospace`;
     ctx.textAlign = onRight ? "right" : "left";
     ctx.fillText(node.id, nx + ldx, ny + ldy);
   });
   ctx.textAlign = "left";
 
-  ctx.fillStyle = "#fff";
+  // ── FOOTER ────────────────────────────────────────────────────
+  dashedLine(H - cPadBot + 20);
+  ctx.fillStyle = "#444";
   ctx.font = '300 22px "DM Mono", monospace';
-  ctx.fillText("get your style map at findmycovey.com", 80, H - 48);
+  ctx.textAlign = "center";
+  ctx.fillText("TAKETHETASTETEST.COM", W / 2, H - cPadBot + 68);
+  ctx.fillStyle = "#333";
+  ctx.font = '300 18px "DM Mono", monospace';
+  ctx.fillText("GENERATED BY TAKETHETASTETEST.COM", W / 2, H - cPadBot + 100);
+  ctx.textAlign = "left";
 
   return canvas;
 };
 
 // ─── APP ─────────────────────────────────────────────────────────────────────
 export default function App() {
+  // Steps: home → email → upload → questions → generating → results
   const [step, setStep]                           = useState("home");
   const [name, setName]                           = useState("");
   const [email, setEmail]                         = useState("");
   const [description, setDescription]             = useState("");
-  const [photo, setPhoto]                         = useState(null);
-  const [photoPreview, setPhotoPreview]           = useState(null);
+  const [photos, setPhotos]                       = useState([null, null, null]);
+  const [photoPreviews, setPhotoPreviews]         = useState([null, null, null]);
+  const [thisThatQuestions, setThisThatQuestions] = useState(null);
+  const [thisThatAnswers, setThisThatAnswers]     = useState({});
+  const [lookingFor, setLookingFor]               = useState("");
+  const [questionsLoading, setQuestionsLoading]   = useState(false);
   const [styleWords, setStyleWords]               = useState([]);
   const [relevantWords, setRelevantWords]         = useState([]);
+  const [archetype, setArchetype]                 = useState("");
+  const [subtitle, setSubtitle]                   = useState("");
+  const [stylePercentages, setStylePercentages]   = useState([]);
   const [error, setError]                         = useState("");
+  const [emailError, setEmailError]               = useState("");
   const [sharing, setSharing]                     = useState(false);
-  const [waitlistError, setWaitlistError]         = useState("");
   const [signupId, setSignupId]                   = useState(null);
   const [typed, setTyped]                         = useState("");
   const [heroReady, setHeroReady]                 = useState(false);
-  const fileRef = useRef(null);
 
-  const HERO_TEXT = "shop with people who get you";
+  const fileRef0 = useRef(null);
+  const fileRef1 = useRef(null);
+  const fileRef2 = useRef(null);
+  const fileRefs = [fileRef0, fileRef1, fileRef2];
+
+  const HERO_TEXT = "let your taste precede you";
 
   useEffect(() => {
     if (step !== "home") return;
@@ -786,11 +899,11 @@ export default function App() {
   const handleShare = async () => {
     setSharing(true);
     try {
-      const canvas = await createShareCard(styleWords, relevantWords);
+      const canvas = await createShareCard(styleWords, relevantWords, archetype, stylePercentages, name);
       const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
       const file = new File([blob], "my-taste.png", { type: "image/png" });
       if (navigator.share && navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file], title: "my taste.", text: `my style is ${styleWords.join(", ")}` });
+        await navigator.share({ files: [file], title: archetype, text: `my style is ${styleWords.join(", ")}` });
       } else {
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
@@ -804,46 +917,20 @@ export default function App() {
     }
   };
 
-  const handlePhotoUpload = async (e) => {
+  const handlePhotoUpload = async (e, index) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setPhotoPreview(URL.createObjectURL(file));
-    setPhoto(await resizeImage(file));
+    const preview = URL.createObjectURL(file);
+    const resized = await resizeImage(file);
+    setPhotoPreviews(prev => { const next = [...prev]; next[index] = preview; return next; });
+    setPhotos(prev => { const next = [...prev]; next[index] = resized; return next; });
   };
 
-  const handleGenerate = async (e) => {
+  const handleEmail = async (e) => {
     e.preventDefault();
-    if (!description.trim() && !photo) { setError("describe your style or add a photo to continue"); return; }
-    setError("");
-    setStep("generating");
-
-    const [result] = await Promise.all([
-      generateStyleWords(description, photo),
-      new Promise(resolve => setTimeout(resolve, 2500)),
-    ]);
-    const finalWords    = result?.words    || ["minimal", "editorial", "dark"];
-    const finalRelevant = result?.relevant || getDefaultRelevant(finalWords);
-    setStyleWords(finalWords);
-    setRelevantWords(finalRelevant);
-
-    if (supabase) {
-      const { error: err } = await supabase.from("style_results").insert({
-        name: name.trim(),
-        email: email.trim(),
-        description: description.trim(),
-        style_words: finalWords,
-      });
-      if (err) console.error("Supabase style_results insert error:", err.message, err.code, err.details);
-    }
-
-    setStep("results");
-  };
-
-  const handleWaitlist = async (e) => {
-    e.preventDefault();
-    if (!name.trim()) { setWaitlistError("please enter your name"); return; }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setWaitlistError("please enter a valid email"); return; }
-    setWaitlistError("");
+    if (!name.trim()) { setEmailError("please enter your name"); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setEmailError("please enter a valid email"); return; }
+    setEmailError("");
 
     if (supabase) {
       const id = crypto.randomUUID();
@@ -854,319 +941,551 @@ export default function App() {
         description: "",
         style_words: [],
       });
-      if (err) console.error("Supabase error:", err.message, err.code, err.details);
+      if (err) console.error("Supabase signups error:", err.message);
       else setSignupId(id);
     }
 
-    setStep("joined");
+    setStep("upload");
   };
+
+  const handleUpload = async (e) => {
+    e.preventDefault();
+    const uploadedCount = photos.filter(Boolean).length;
+    if (uploadedCount < 2) { setError("please upload at least 2 photos to continue"); return; }
+    setError("");
+    setQuestionsLoading(true);
+    setStep("questions");
+
+    const validPhotos = photos.filter(Boolean);
+    const questions = await generateThisThatQuestions(validPhotos, description);
+    setThisThatQuestions(questions || getFallbackQuestions());
+    setQuestionsLoading(false);
+  };
+
+  const getFallbackQuestions = () => [
+    {
+      situation: "a casual Saturday running errands",
+      optionA: "vintage graphic tee, wide-leg jeans, chunky sneakers",
+      optionB: "fitted ribbed tank, straight-leg trousers, ballet flats",
+    },
+    {
+      situation: "dinner with friends at a nice restaurant",
+      optionA: "sleek slip dress, minimal jewelry, strappy heels",
+      optionB: "oversized blazer, tailored shorts, loafers",
+    },
+    {
+      situation: "a Sunday morning at a coffee shop",
+      optionA: "cozy knit sweater, loose linen pants, clogs",
+      optionB: "crisp button-down, dark jeans, clean white sneakers",
+    },
+  ];
+
+  const handleAnswer = (questionIndex, answer) => {
+    setThisThatAnswers(prev => ({ ...prev, [questionIndex]: answer }));
+  };
+
+  const handleGenerate = async (e) => {
+    e.preventDefault();
+    const answeredCount = Object.keys(thisThatAnswers).length;
+    if (thisThatQuestions && answeredCount < thisThatQuestions.length) {
+      setError("please answer all questions to continue");
+      return;
+    }
+    setError("");
+    setStep("generating");
+
+    const validPhotos = photos.filter(Boolean);
+    const [result] = await Promise.all([
+      generateStyleWords(validPhotos, description, thisThatQuestions, thisThatAnswers, lookingFor),
+      new Promise(resolve => setTimeout(resolve, 2500)),
+    ]);
+    const finalWords       = result?.words       || ["minimal", "editorial", "dark"];
+    const finalRelevant    = result?.relevant    || getDefaultRelevant(finalWords);
+    const finalArchetype   = result?.archetype   || "The Style Explorer";
+    const finalSubtitle    = result?.subtitle    || "";
+    const finalPercentages = result?.percentages || [50, 30, 20];
+    setStyleWords(finalWords);
+    setRelevantWords(finalRelevant);
+    setArchetype(finalArchetype);
+    setSubtitle(finalSubtitle);
+    setStylePercentages(finalPercentages);
+
+    if (supabase) {
+      const thisOrThatData = thisThatQuestions?.map((q, i) => ({
+        situation: q.situation,
+        optionA: q.optionA,
+        optionB: q.optionB,
+        answer: thisThatAnswers[i],
+        chosen: thisThatAnswers[i] === "A" ? q.optionA : q.optionB,
+      })) || [];
+
+      const { error: err } = await supabase.from("taste_results").insert({
+        signup_id: signupId || null,
+        name: name.trim(),
+        email: email.trim(),
+        description: description.trim(),
+        this_or_that: thisOrThatData,
+        looking_for: lookingFor.trim(),
+        style_words: finalWords,
+        relevant_words: finalRelevant,
+      });
+      if (err) console.error("Supabase taste_results error:", err.message);
+    }
+
+    setStep("results");
+  };
+
+  const backBtn = (target) => (
+    <button
+      onClick={() => setStep(target)}
+      style={{
+        position: "absolute",
+        top: 28,
+        left: 0,
+        background: "none",
+        border: "none",
+        cursor: "pointer",
+        color: "#aaa",
+        fontSize: 20,
+        padding: 0,
+        lineHeight: 1,
+        display: "flex",
+        alignItems: "center",
+        gap: 6,
+      }}
+      aria-label="go back"
+    >
+      ←
+    </button>
+  );
 
   return (
     <>
       <GlobalStyles />
       <div className="app">
-
         <div className="page">
 
-            {/* ── HOME ─────────────────────────────────────────────────────── */}
-            {step === "home" && (
-              <div className="fade-up">
-                <nav className="site-nav">
-                  <span style={{
-                    fontFamily: "'Playfair Display', serif",
-                    fontStyle: "italic",
-                    fontWeight: 400,
-                    fontSize: 22,
-                    letterSpacing: "-0.02em",
-                  }}>
-                    covey
-                  </span>
-                  <span style={{ fontSize: 9, letterSpacing: "0.18em", color: "#555", textTransform: "uppercase" }}>
-                    early access
-                  </span>
-                </nav>
-
-                <div className="home-hero">
-                  <h1 style={{
-                    fontFamily: "'Playfair Display', serif",
-                    fontStyle: "italic",
-                    fontWeight: 400,
-                    fontSize: "clamp(42px, 5.5vw, 80px)",
-                    lineHeight: 1.05,
-                    letterSpacing: "-0.02em",
-                    marginBottom: 28,
-                  }}>
-                    {typed}
-                    {!heroReady && (
-                      <span style={{
-                        display: "inline-block",
-                        width: 3,
-                        height: "0.85em",
-                        background: "#fff",
-                        marginLeft: 4,
-                        verticalAlign: "middle",
-                        animation: "blink 1s step-end infinite",
-                      }} />
-                    )}
-                  </h1>
-
-                  <p style={{ fontSize: 13, color: "#888", lineHeight: 1.8, marginBottom: 44, maxWidth: 480, letterSpacing: "0.02em", opacity: heroReady ? 1 : 0, animation: heroReady ? "fadeUp 0.55s cubic-bezier(0.16,1,0.3,1) 0s both" : "none" }}>
-                    discover style through people who actually share your taste
-                  </p>
-                  <button onClick={() => setStep("waitlist")} style={{ ...btnStyle, opacity: heroReady ? 1 : 0, animation: heroReady ? "fadeUp 0.55s cubic-bezier(0.16,1,0.3,1) 0.18s both" : "none" }}>
-                    Join the waitlist →
-                  </button>
-                  <p style={{ fontSize: 11, color: "#555", marginTop: 16, letterSpacing: "0.04em", lineHeight: 1.6, opacity: heroReady ? 1 : 0, animation: heroReady ? "fadeUp 0.55s cubic-bezier(0.16,1,0.3,1) 0.32s both" : "none" }}>
-                    sign up to get early access when we launch <br /> (and a special sneak preview)
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* ── STYLE INPUT ──────────────────────────────────────────────── */}
-            {step === "style" && (
-              <div className="fade-up" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "72px 0 88px", minHeight: "calc(100vh - 82px)", position: "relative" }}>
-                <h2 style={{
+          {/* ── HOME ─────────────────────────────────────────────────────── */}
+          {step === "home" && (
+            <div className="fade-up">
+              <nav className="site-nav">
+                <span style={{
                   fontFamily: "'Playfair Display', serif",
                   fontStyle: "italic",
                   fontWeight: 400,
-                  fontSize: "clamp(28px, 4vw, 42px)",
-                  lineHeight: 1.2,
-                  marginBottom: 10,
-                  letterSpacing: "-0.01em",
-                  textAlign: "center",
+                  fontSize: 22,
+                  letterSpacing: "-0.02em",
                 }}>
-                  describe your style.
-                </h2>
-                <p style={{ fontSize: 11, color: "#aaa", marginBottom: 36, letterSpacing: "0.04em", lineHeight: 1.6, textAlign: "center" }}>
-                  prose, references, vibes — or just a photo.
-                </p>
+                  tastetest
+                </span>
+                <span style={{ fontSize: 9, letterSpacing: "0.18em", color: "#555", textTransform: "uppercase" }}>
+                  early access
+                </span>
+              </nav>
 
-                <form onSubmit={handleGenerate} style={{ width: "100%", maxWidth: 400, display: "flex", flexDirection: "column", alignItems: "center" }}>
-                  <textarea
-                    placeholder="I'm drawn to clean lines and dark palettes, vintage pieces with a quiet edge..."
-                    value={description}
-                    onChange={e => setDescription(e.target.value)}
-                    rows={5}
-                    style={{ ...inputStyle, resize: "none", height: 180, lineHeight: 1.7, paddingTop: 12, width: "100%" }}
-                  />
-
-                  <div
-                    onClick={() => fileRef.current?.click()}
-                    style={{
-                      marginTop: 16,
-                      border: "1px dashed #2a2a2a",
-                      cursor: "pointer",
-                      overflow: "hidden",
-                      minHeight: photoPreview ? "auto" : 56,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      width: "100%",
-                    }}
-                  >
-                    {photoPreview
-                      ? <img src={photoPreview} alt="style reference" style={{ width: "100%", display: "block", maxHeight: 220, objectFit: "cover" }} />
-                      : <p style={{ fontSize: 11, color: "#bbb", letterSpacing: "0.08em" }}>+ add a photo reference</p>
-                    }
-                  </div>
-                  <input ref={fileRef} type="file" accept="image/*" onChange={handlePhotoUpload} style={{ display: "none" }} />
-
-                  {error && <p style={{ fontSize: 11, color: "#999", marginTop: 10, alignSelf: "flex-start" }}>{error}</p>}
-                  <button type="submit" style={{ ...btnStyle, marginTop: 28 }}>generate →</button>
-                </form>
-              </div>
-            )}
-
-            {/* ── GENERATING ───────────────────────────────────────────────── */}
-            {step === "generating" && (
-              <div className="generating-layout fade-in">
-                <p style={{ fontSize: 11, letterSpacing: "0.14em", color: "#aaa", textTransform: "uppercase" }}>
-                  reading your taste...
-                </p>
-                <div style={{ width: "100%", maxWidth: 560 }}>
-                  <AnimatedConstellation />
-                </div>
-              </div>
-            )}
-
-            {/* ── WAITLIST ─────────────────────────────────────────────────── */}
-            {step === "waitlist" && (
-              <div className="fade-up" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "72px 0 88px", minHeight: "calc(100vh - 82px)", position: "relative" }}>
-                <button
-                  onClick={() => setStep("home")}
-                  style={{
-                    position: "absolute",
-                    top: 28,
-                    left: 0,
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                    color: "#aaa",
-                    fontSize: 20,
-                    padding: 0,
-                    lineHeight: 1,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                  }}
-                  aria-label="go back"
-                >
-                  ←
-                </button>
-                <h2 style={{
+              <div className="home-hero">
+                <h1 style={{
                   fontFamily: "'Playfair Display', serif",
                   fontStyle: "italic",
                   fontWeight: 400,
-                  fontSize: "clamp(28px, 4vw, 42px)",
-                  lineHeight: 1.2,
-                  marginBottom: 14,
-                  letterSpacing: "-0.01em",
-                  textAlign: "center",
-                }}>
-                  join the waitlist
-                </h2>
-                <p style={{ fontSize: 13, color: "#888", lineHeight: 1.8, marginBottom: 40, maxWidth: 380, letterSpacing: "0.02em", textAlign: "center" }}>
-                  enter your email to get early access when we launch
-                </p>
-                <form onSubmit={handleWaitlist} style={{ width: "100%", maxWidth: 400 }}>
-                  <div style={{ marginBottom: 14 }}>
-                    <input
-                      type="text"
-                      placeholder="your name"
-                      value={name}
-                      onChange={e => setName(e.target.value)}
-                      style={inputStyle}
-                      autoComplete="name"
-                    />
-                  </div>
-                  <div style={{ marginBottom: 28 }}>
-                    <input
-                      type="email"
-                      placeholder="your email"
-                      value={email}
-                      onChange={e => setEmail(e.target.value)}
-                      style={inputStyle}
-                      autoComplete="email"
-                    />
-                  </div>
-                  {waitlistError && <p style={{ fontSize: 11, color: "#999", marginBottom: 12 }}>{waitlistError}</p>}
-                  <button type="submit" style={{ ...btnStyle, width: "100%", textAlign: "center" }}>
-                    join →
-                  </button>
-                </form>
-              </div>
-            )}
-
-            {/* ── JOINED ───────────────────────────────────────────────── */}
-            {step === "joined" && (
-              <div className="fade-up" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "72px 0 88px", minHeight: "calc(100vh - 82px)", textAlign: "center" }}>
-                <h2 style={{
-                  fontFamily: "'Playfair Display', serif",
-                  fontStyle: "italic",
-                  fontWeight: 400,
-                  fontSize: "clamp(28px, 4vw, 42px)",
-                  lineHeight: 1.2,
-                  marginBottom: 20,
-                  letterSpacing: "-0.01em",
-                }}>
-                  thank you for joining!
-                </h2>
-                <p style={{ fontSize: 13, color: "#888", lineHeight: 1.8, marginBottom: 48, maxWidth: 360, letterSpacing: "0.02em" }}>
-                  we'll be in touch soon. <br /> <br />in the meantime, do you want a sneak preview?
-                </p>
-                <div style={{ display: "flex", flexDirection: "column", gap: 12, width: "100%", maxWidth: 320 }}>
-                  <button onClick={() => setStep("style")} style={{ ...btnStyle, width: "100%", textAlign: "center" }}>
-                    Yes, map my style →
-                  </button>
-                  <button onClick={() => setStep("home")} style={{ ...ghostBtnStyle, width: "100%", textAlign: "center" }}>
-                    No, back to home
-                  </button>
-                </div>
-              </div>
-            )}
-
-          {/* ── RESULTS ────────────────────────────────────────────────── */}
-            {step === "results" && (
-              <div className="fade-up" style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "72px 0 88px", minHeight: "calc(100vh - 82px)", position: "relative" }}>
-                <h2 style={{
-                  fontFamily: "'DM Mono', monospace",
-                  fontStyle: "normal",
-                  fontWeight: 400,
-                  fontSize: "clamp(11px, 1.4vw, 13px)",
-                  letterSpacing: "0.12em",
-                  textTransform: "uppercase",
-                  color: "#aaa",
-                  marginBottom: 36,
-                  textAlign: "center",
-                }}>
-                  Your style, mapped.
-                </h2>
-
-                {/* Share card preview */}
-                <div style={{
-                  background: "#0a0a0a",
-                  border: "1px solid #2e2e2e",
-                  borderRadius: 16,
-                  width: "100%",
-                  maxWidth: 280,
-                  aspectRatio: "9 / 16",
-                  padding: "20px 20px 16px",
-                  display: "flex",
-                  flexDirection: "column",
+                  fontSize: "clamp(42px, 5.5vw, 80px)",
+                  lineHeight: 1.05,
+                  letterSpacing: "-0.02em",
                   marginBottom: 28,
-                  flexShrink: 0,
-                  overflow: "hidden",
                 }}>
-                  <span style={{
-                    fontFamily: "'Playfair Display', serif",
-                    fontStyle: "italic",
-                    fontWeight: 400,
-                    fontSize: 18,
-                    letterSpacing: "-0.02em",
-                    marginBottom: 4,
-                  }}>my style map</span>
-                  <p style={{ fontSize: 9.5, color: "#aaa", letterSpacing: "0.14em", marginBottom: 14, textTransform: "uppercase" }}>
-                    generated by covey
-                  </p>
-                  {styleWords.map((word, i) => (
-                    <div key={word} style={{
-                      fontFamily: "'Playfair Display', serif",
-                      fontStyle: "italic",
-                      fontWeight: 400,
-                      fontSize: [36, 31, 27][i],
-                      lineHeight: 1.1,
-                      letterSpacing: "-0.02em",
-                    }}>
-                      {word}
+                  {typed}
+                  {!heroReady && (
+                    <span style={{
+                      display: "inline-block",
+                      width: 3,
+                      height: "0.85em",
+                      background: "#fff",
+                      marginLeft: 4,
+                      verticalAlign: "middle",
+                      animation: "blink 1s step-end infinite",
+                    }} />
+                  )}
+                </h1>
+
+                <p style={{ fontSize: 13, color: "#888", lineHeight: 1.8, marginBottom: 44, maxWidth: 480, letterSpacing: "0.02em", opacity: heroReady ? 1 : 0, animation: heroReady ? "fadeUp 0.55s cubic-bezier(0.16,1,0.3,1) 0s both" : "none" }}>
+                  what if you didn't have to spend hours digging through search results, social media posts, and brand websites to find a piece that fits your style?
+                </p>
+                <button onClick={() => setStep("email")} style={{ ...btnStyle, opacity: heroReady ? 1 : 0, animation: heroReady ? "fadeUp 0.55s cubic-bezier(0.16,1,0.3,1) 0.18s both" : "none" }}>
+                  join the waitlist →
+                </button>
+                <p style={{ fontSize: 11, color: "#555", marginTop: 16, letterSpacing: "0.04em", lineHeight: 1.6, opacity: heroReady ? 1 : 0, animation: heroReady ? "fadeUp 0.55s cubic-bezier(0.16,1,0.3,1) 0.32s both" : "none" }}>
+                  sign up to get early access <br /> (and to get your taste profile today)
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* ── EMAIL ────────────────────────────────────────────────────── */}
+          {step === "email" && (
+            <div className="fade-up" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "72px 0 88px", minHeight: "calc(100vh - 82px)", position: "relative" }}>
+              {backBtn("home")}
+              <h2 style={{
+                fontFamily: "'Playfair Display', serif",
+                fontStyle: "italic",
+                fontWeight: 400,
+                fontSize: "clamp(28px, 4vw, 42px)",
+                lineHeight: 1.2,
+                marginBottom: 14,
+                letterSpacing: "-0.01em",
+                textAlign: "center",
+              }}>
+                let's get started
+              </h2>
+              <p style={{ fontSize: 13, color: "#888", lineHeight: 1.8, marginBottom: 40, maxWidth: 380, letterSpacing: "0.02em", textAlign: "center" }}>
+                enter your email to get early access when we launch and to get your taste profile today
+              </p>
+              <form onSubmit={handleEmail} style={{ width: "100%", maxWidth: 400 }}>
+                <div style={{ marginBottom: 14 }}>
+                  <input
+                    type="text"
+                    placeholder="your name"
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    style={inputStyle}
+                    autoComplete="name"
+                  />
+                </div>
+                <div style={{ marginBottom: 28 }}>
+                  <input
+                    type="email"
+                    placeholder="your email"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    style={inputStyle}
+                    autoComplete="email"
+                  />
+                </div>
+                {emailError && <p style={{ fontSize: 11, color: "#999", marginBottom: 12 }}>{emailError}</p>}
+                <button type="submit" style={{ ...btnStyle, width: "100%", textAlign: "center" }}>
+                  continue →
+                </button>
+              </form>
+            </div>
+          )}
+
+          {/* ── UPLOAD ───────────────────────────────────────────────────── */}
+          {step === "upload" && (
+            <div className="fade-up" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "72px 0 88px", minHeight: "calc(100vh - 82px)", position: "relative" }}>
+              {backBtn("email")}
+              <h2 style={{
+                fontFamily: "'Playfair Display', serif",
+                fontStyle: "italic",
+                fontWeight: 400,
+                fontSize: "clamp(28px, 4vw, 42px)",
+                lineHeight: 1.2,
+                marginBottom: 10,
+                letterSpacing: "-0.01em",
+                textAlign: "center",
+              }}>
+                show us your style.
+              </h2>
+              <p style={{ fontSize: 11, color: "#aaa", marginBottom: 36, letterSpacing: "0.04em", lineHeight: 1.6, textAlign: "center" }}>
+                upload 2–3 photos of your favorite outfits
+              </p>
+
+              <form onSubmit={handleUpload} style={{ width: "100%", maxWidth: 400, display: "flex", flexDirection: "column", alignItems: "center" }}>
+
+                {/* Photo slots */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, width: "100%", marginBottom: 20 }}>
+                  {[0, 1, 2].map((i) => (
+                    <div key={i} style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                      <div
+                        onClick={() => fileRefs[i].current?.click()}
+                        style={{
+                          border: "1px dashed #2a2a2a",
+                          cursor: "pointer",
+                          overflow: "hidden",
+                          aspectRatio: "3 / 4",
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          position: "relative",
+                          background: photoPreviews[i] ? "transparent" : "#0f0f0f",
+                        }}
+                      >
+                        {photoPreviews[i] ? (
+                          <img
+                            src={photoPreviews[i]}
+                            alt={`outfit ${i + 1}`}
+                            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                          />
+                        ) : (
+                          <span style={{ fontSize: 20, color: "#333", lineHeight: 1 }}>+</span>
+                        )}
+                      </div>
+                      <p style={{ fontSize: 9, color: "#444", letterSpacing: "0.08em", textAlign: "center", textTransform: "uppercase" }}>
+                        {i === 2 ? "optional" : "required"}
+                      </p>
+                      <input
+                        ref={fileRefs[i]}
+                        type="file"
+                        accept="image/*"
+                        onChange={e => handlePhotoUpload(e, i)}
+                        style={{ display: "none" }}
+                      />
                     </div>
                   ))}
-                  <div style={{ flex: 1, marginTop: 12, minHeight: 0 }}>
-                    <Constellation highlightedWords={styleWords} relevantWords={relevantWords} />
+                </div>
+
+                {/* Optional description */}
+                <textarea
+                  placeholder="add more about your style (optional) — vibes, references, what you gravitate toward..."
+                  value={description}
+                  onChange={e => setDescription(e.target.value)}
+                  rows={3}
+                  style={{ ...inputStyle, resize: "none", lineHeight: 1.7, paddingTop: 12, width: "100%", marginBottom: 4 }}
+                />
+
+                {error && <p style={{ fontSize: 11, color: "#999", marginTop: 10, alignSelf: "flex-start" }}>{error}</p>}
+                <button type="submit" style={{ ...btnStyle, marginTop: 28, width: "100%", textAlign: "center" }}>
+                  continue →
+                </button>
+              </form>
+            </div>
+          )}
+
+          {/* ── QUESTIONS ────────────────────────────────────────────────── */}
+          {step === "questions" && (
+            <div className="fade-up" style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "72px 0 88px", minHeight: "calc(100vh - 82px)", position: "relative" }}>
+              {!questionsLoading && backBtn("upload")}
+
+              {questionsLoading ? (
+                <div className="generating-layout fade-in">
+                  <p style={{ fontSize: 11, letterSpacing: "0.14em", color: "#aaa", textTransform: "uppercase" }}>
+                    reading your style...
+                  </p>
+                  <div style={{ width: "100%", maxWidth: 560 }}>
+                    <AnimatedConstellation />
                   </div>
                 </div>
+              ) : (
+                <>
+                  <h2 style={{
+                    fontFamily: "'Playfair Display', serif",
+                    fontStyle: "italic",
+                    fontWeight: 400,
+                    fontSize: "clamp(28px, 4vw, 42px)",
+                    lineHeight: 1.2,
+                    marginBottom: 10,
+                    letterSpacing: "-0.01em",
+                    textAlign: "center",
+                  }}>
+                    a few quick questions.
+                  </h2>
+                  <p style={{ fontSize: 11, color: "#aaa", marginBottom: 44, letterSpacing: "0.04em", lineHeight: 1.6, textAlign: "center" }}>
+                    this or that — just go with your gut
+                  </p>
 
-                {/* Buttons */}
-                <div style={{ display: "flex", flexDirection: "column", gap: 10, width: "100%", maxWidth: 280 }}>
-                  <button
-                    onClick={handleShare}
-                    disabled={sharing}
-                    style={{ ...btnStyle, width: "100%", textAlign: "center", opacity: sharing ? 0.5 : 1 }}
-                  >
-                    {sharing ? "saving..." : "share"}
-                  </button>
-                  <button
-                    onClick={() => setStep("home")}
-                    style={{ ...ghostBtnStyle, width: "100%", textAlign: "center" }}
-                  >
-                    back to home
-                  </button>
-                </div>
+                  <div style={{ width: "100%", maxWidth: 440, display: "flex", flexDirection: "column", gap: 32 }}>
+                    {thisThatQuestions?.map((q, i) => (
+                      <div key={i}>
+                        <p style={{ fontSize: 10, color: "#666", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>
+                          {i + 1} of {thisThatQuestions.length}
+                        </p>
+                        <p style={{ fontSize: 13, color: "#ccc", marginBottom: 14, lineHeight: 1.6, letterSpacing: "0.01em" }}>
+                          at <em style={{ color: "#fff" }}>{q.situation}</em>...
+                        </p>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                          {["A", "B"].map((opt) => {
+                            const label = opt === "A" ? q.optionA : q.optionB;
+                            const selected = thisThatAnswers[i] === opt;
+                            return (
+                              <button
+                                key={opt}
+                                onClick={() => handleAnswer(i, opt)}
+                                style={{
+                                  background: selected ? "#fff" : "transparent",
+                                  color: selected ? "#0a0a0a" : "#888",
+                                  border: selected ? "1px solid #fff" : "1px solid #2a2a2a",
+                                  padding: "14px 12px",
+                                  fontSize: 11,
+                                  letterSpacing: "0.02em",
+                                  lineHeight: 1.6,
+                                  cursor: "pointer",
+                                  textAlign: "left",
+                                  transition: "all 0.15s ease",
+                                }}
+                              >
+                                {label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+
+                    {/* Looking for question */}
+                    <div>
+                      <p style={{ fontSize: 10, color: "#666", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>
+                        one more
+                      </p>
+                      <p style={{ fontSize: 13, color: "#ccc", marginBottom: 14, lineHeight: 1.6, letterSpacing: "0.01em" }}>
+                        what's one thing you're trying to find right now?
+                      </p>
+                      <input
+                        type="text"
+                        placeholder="e.g. the perfect white shirt, going-out tops, fall transition pieces..."
+                        value={lookingFor}
+                        onChange={e => setLookingFor(e.target.value)}
+                        style={{ ...inputStyle, fontSize: 12 }}
+                      />
+                    </div>
+
+                    {error && <p style={{ fontSize: 11, color: "#999" }}>{error}</p>}
+                    <button
+                      onClick={handleGenerate}
+                      style={{ ...btnStyle, width: "100%", textAlign: "center", marginTop: 8 }}
+                    >
+                      generate my taste profile →
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* ── GENERATING ───────────────────────────────────────────────── */}
+          {step === "generating" && (
+            <div className="generating-layout fade-in">
+              <p style={{ fontSize: 11, letterSpacing: "0.14em", color: "#aaa", textTransform: "uppercase" }}>
+                mapping your taste...
+              </p>
+              <div style={{ width: "100%", maxWidth: 560 }}>
+                <AnimatedConstellation />
               </div>
-            )}
+            </div>
+          )}
 
-          </div>
+          {/* ── RESULTS ────────────────────────────────────────────────── */}
+          {step === "results" && (
+            <div className="fade-up" style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "72px 0 88px", minHeight: "calc(100vh - 82px)", position: "relative" }}>
+              <h2 style={{
+                fontFamily: "'DM Mono', monospace",
+                fontStyle: "normal",
+                fontWeight: 400,
+                fontSize: "clamp(11px, 1.4vw, 13px)",
+                letterSpacing: "0.12em",
+                textTransform: "uppercase",
+                color: "#aaa",
+                marginBottom: subtitle ? 10 : 36,
+                textAlign: "center",
+              }}>
+                Your style, mapped.
+              </h2>
+              {subtitle && (
+                <p style={{
+                  fontFamily: "'DM Mono', monospace",
+                  fontSize: "clamp(11px, 1.3vw, 13px)",
+                  color: "#666",
+                  textAlign: "center",
+                  maxWidth: 320,
+                  lineHeight: 1.6,
+                  marginBottom: 36,
+                  letterSpacing: "0.02em",
+                }}>
+                  {subtitle}
+                </p>
+              )}
 
+              {/* Share card preview — receipt
+               style */}
+              <div style={{
+                background: "#0a0a0a",
+                border: "1px solid #222",
+                borderRadius: 12,
+                width: "100%",
+                maxWidth: 280,
+                aspectRatio: "9 / 16",
+                padding: "16px 18px 14px",
+                display: "flex",
+                flexDirection: "column",
+                marginBottom: 28,
+                flexShrink: 0,
+                overflow: "hidden",
+                fontFamily: "'DM Mono', monospace",
+              }}>
+                {/* Receipt header */}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
+                  <span style={{ fontSize: 7.5, color: "#444", letterSpacing: "0.12em", textTransform: "uppercase" }}>taste profile</span>
+                  <span style={{ fontSize: 7, color: "#333", letterSpacing: "0.06em" }}>
+                    {new Date().toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" }).replace(/\//g, ".")}
+                  </span>
+                </div>
+                <div style={{ borderTop: "1px dashed #252525", marginBottom: 12 }} />
+
+                {/* Archetype */}
+                <span style={{
+                  fontFamily: "'Playfair Display', serif",
+                  fontStyle: "italic",
+                  fontWeight: 400,
+                  fontSize: 22,
+                  lineHeight: 1.1,
+                  letterSpacing: "-0.02em",
+                  color: "#fff",
+                  marginBottom: 12,
+                }}>
+                  {archetype}
+                </span>
+                <div style={{ borderTop: "1px dashed #252525", marginBottom: 10 }} />
+
+                {/* Style breakdown */}
+                <p style={{ fontSize: 7.5, color: "#444", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>
+                  {name.split(" ")[0].toLowerCase()}'s style is:
+                </p>
+                {styleWords.map((word, i) => (
+                  <div key={word} style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "baseline",
+                    marginBottom: i < 2 ? 5 : 0,
+                  }}>
+                    <span style={{ fontSize: [13, 11, 9.5][i], color: "#fff", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                      {word}
+                    </span>
+                    <span style={{ fontSize: [11, 9.5, 8.5][i], color: "#555", letterSpacing: "0.06em" }}>
+                      {stylePercentages[i]}%
+                    </span>
+                  </div>
+                ))}
+                <div style={{ borderTop: "1px dashed #252525", marginTop: 10, marginBottom: 8 }} />
+
+                {/* Constellation */}
+                <div style={{ flex: 1, minHeight: 0 }}>
+                  <Constellation highlightedWords={styleWords} relevantWords={relevantWords} />
+                </div>
+
+                {/* Footer */}
+                <p style={{ fontSize: 7, color: "#333", letterSpacing: "0.1em", textTransform: "uppercase", marginTop: 8, textAlign: "center" }}>
+                  takethetastetest.com
+                </p>
+              </div>
+
+              {/* Buttons */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 10, width: "100%", maxWidth: 280 }}>
+                <button
+                  onClick={handleShare}
+                  disabled={sharing}
+                  style={{ ...btnStyle, width: "100%", textAlign: "center", opacity: sharing ? 0.5 : 1 }}
+                >
+                  {sharing ? "saving..." : "share"}
+                </button>
+                <button
+                  onClick={() => setStep("home")}
+                  style={{ ...ghostBtnStyle, width: "100%", textAlign: "center" }}
+                >
+                  back to home
+                </button>
+              </div>
+            </div>
+          )}
+
+        </div>
       </div>
     </>
   );
