@@ -1023,6 +1023,7 @@ export default function App() {
         answer_3: thisThatAnswers[2] === "A" ? thisThatQuestions?.[2]?.optionA : thisThatQuestions?.[2]?.optionB,
         style_words: finalWords,
         archetype: finalArchetype,
+        looking_for: lookingFor.trim() || null,
       });
       if (err) console.error("Supabase taste_results error:", err.message);
     }
