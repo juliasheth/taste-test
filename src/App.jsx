@@ -477,7 +477,7 @@ Rules:
     });
     if (!res.ok) return null;
     const data = await res.json();
-    const match = data.content[0].text.match(/\{[\s\S]*?\}/);
+    const match = data.content[0].text.match(/\{[\s\S]*\}/);
     if (!match) return null;
     const parsed = JSON.parse(match[0]);
     const validSet = new Set(NODE_IDS);
@@ -698,156 +698,157 @@ const createShareCard = async (words, relevant, archetype, percentages, userName
   const ctx = canvas.getContext("2d");
 
   await Promise.all([
-    document.fonts.load('italic 400 120px "Playfair Display"'),
-    document.fonts.load('400 28px "DM Mono"'),
-    document.fonts.load('300 22px "DM Mono"'),
+    document.fonts.load('italic 400 85px "Playfair Display"'),
+    document.fonts.load('400 50px "DM Mono"'),
+    document.fonts.load('300 29px "DM Mono"'),
   ]);
 
   // Background
   ctx.fillStyle = "#0a0a0a";
   ctx.fillRect(0, 0, W, H);
 
-  const PAD = 88;
+  const PAD = 70;
   const INNER_W = W - PAD * 2;
-  let y = 90;
+  let y = 62;
 
-  const dashedLine = (yPos) => {
+  const thinDash = (yPos) => {
     ctx.beginPath();
-    ctx.setLineDash([14, 10]);
+    ctx.setLineDash([8, 6]);
     ctx.moveTo(PAD, yPos);
     ctx.lineTo(W - PAD, yPos);
-    ctx.strokeStyle = "#2e2e2e";
+    ctx.strokeStyle = "#252525";
     ctx.lineWidth = 1.5;
     ctx.stroke();
     ctx.setLineDash([]);
   };
 
-  const drawReceiptRow = (label, pct, rowY, fontSize) => {
-    const pctText = pct + "%";
-    ctx.font = `400 ${fontSize}px "DM Mono", monospace`;
-    const labelW = ctx.measureText(label).width;
-    const pctW = ctx.measureText(pctText).width;
-    const dotChar = ".";
-    const dotW = ctx.measureText(dotChar).width;
-    const available = INNER_W - labelW - pctW - 24;
-    const numDots = Math.max(0, Math.floor(available / dotW));
-
-    ctx.fillStyle = "#fff";
-    ctx.textAlign = "left";
-    ctx.fillText(label, PAD, rowY);
-    ctx.fillStyle = "#3a3a3a";
-    ctx.fillText(dotChar.repeat(numDots), PAD + labelW + 12, rowY);
-    ctx.fillStyle = "#aaa";
-    ctx.textAlign = "right";
-    ctx.fillText(pctText, W - PAD, rowY);
-    ctx.textAlign = "left";
-  };
-
-  // ── HEADER ────────────────────────────────────────────────────
-  ctx.fillStyle = "#555";
-  ctx.font = '300 22px "DM Mono", monospace';
-  ctx.textAlign = "center";
-  ctx.fillText(" YOUR TASTE PROFILE", W / 2, y);
-  y += 32;
+  // ── HEADER ROW ────────────────────────────────────────────────
+  ctx.font = '300 29px "DM Mono", monospace';
+  ctx.fillStyle = "#444";
+  ctx.textAlign = "left";
+  ctx.fillText("TASTE PROFILE", PAD, y);
 
   const dateStr = new Date().toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" }).replace(/\//g, ".");
-  ctx.fillStyle = "#444";
-  ctx.font = '300 20px "DM Mono", monospace';
-  ctx.fillText(dateStr, W / 2, y);
+  ctx.fillStyle = "#333";
+  ctx.font = '300 27px "DM Mono", monospace';
+  ctx.textAlign = "right";
+  ctx.fillText(dateStr, W - PAD, y);
   ctx.textAlign = "left";
-  y += 52;
+  y += 38;
 
-  dashedLine(y); y += 68;
+  thinDash(y); y += 46;
 
   // ── ARCHETYPE ─────────────────────────────────────────────────
   ctx.fillStyle = "#fff";
-  ctx.font = 'italic 400 96px "Playfair Display", serif';
-  ctx.fillText(archetype || "The Style Explorer", PAD, y);
-  y += 52;
+  ctx.font = 'italic 400 85px "Playfair Display", serif';
+  const archetypeText = archetype || "The Style Explorer";
+  const archetypeWords = archetypeText.split(" ");
+  let line = "";
+  const archetypeLines = [];
+  for (const word of archetypeWords) {
+    const test = line ? line + " " + word : word;
+    if (ctx.measureText(test).width > INNER_W && line) { archetypeLines.push(line); line = word; }
+    else line = test;
+  }
+  if (line) archetypeLines.push(line);
+  for (const l of archetypeLines) { ctx.fillText(l, PAD, y); y += 90; }
+  y += 12;
 
-  dashedLine(y); y += 60;
+  thinDash(y); y += 38;
 
   // ── STYLE BREAKDOWN ───────────────────────────────────────────
   const firstName = (userName || "your").split(" ")[0].toLowerCase();
-  ctx.fillStyle = "#555";
-  ctx.font = '300 24px "DM Mono", monospace';
-  ctx.fillText(`${firstName}'s style is:`, PAD, y);
-  y += 56;
+  ctx.fillStyle = "#444";
+  ctx.font = '300 29px "DM Mono", monospace';
+  ctx.fillText(`${firstName}'s style is:`.toUpperCase(), PAD, y);
+  y += 31;
 
-  const rowSizes = [52, 44, 38];
+  const wordSizes = [50, 42, 37];
+  const pctSizes  = [42, 37, 33];
   words.forEach((word, i) => {
-    drawReceiptRow(word.toUpperCase(), percentages?.[i] ?? [50, 30, 20][i], y, rowSizes[i]);
-    y += rowSizes[i] * 1.6;
+    ctx.font = `400 ${wordSizes[i]}px "DM Mono", monospace`;
+    ctx.fillStyle = "#fff";
+    ctx.textAlign = "left";
+    ctx.fillText(word.toUpperCase(), PAD, y);
+
+    ctx.font = `300 ${pctSizes[i]}px "DM Mono", monospace`;
+    ctx.fillStyle = "#555";
+    ctx.textAlign = "right";
+    ctx.fillText(`${percentages?.[i] ?? [50, 30, 20][i]}%`, W - PAD, y);
+    ctx.textAlign = "left";
+
+    if (i < 2) y += wordSizes[i] + 19;
+    else        y += wordSizes[i];
   });
 
-  y += 20;
-  dashedLine(y); y += 60;
+  y += 39;
+  thinDash(y); y += 31;
 
   // ── CONSTELLATION ─────────────────────────────────────────────
-  const relevantIds = relevant && relevant.length > 0 ? relevant : getDefaultRelevant(words);
-  const highlighted = new Set(words);
-  const visibleNodes = STYLE_NODES.filter(n => relevantIds.includes(n.id));
-  const hNodes = visibleNodes.filter(n => highlighted.has(n.id));
-
-  const cPadBot = 160;
-  const cRegionH = H - y - cPadBot;
+  const FOOTER_H = 27 + 31 + 54; // text + marginTop + padBottom
+  const cRegionH = H - y - FOOTER_H;
   const side = Math.min(INNER_W, cRegionH);
   const offX = PAD + (INNER_W - side) / 2;
   const offY = y + (cRegionH - side) / 2;
   const cx = (px) => offX + (px / 100) * side;
   const cy = (py) => offY + (py / 100) * side;
 
+  const relevantIds = relevant && relevant.length > 0 ? relevant : getDefaultRelevant(words);
+  const highlighted = new Set(words);
+  const visibleNodes = STYLE_NODES.filter(n => relevantIds.includes(n.id));
+  const hNodes = visibleNodes.filter(n => highlighted.has(n.id));
+
+  // Connections between highlighted nodes (matches SVG: strokeWidth 0.25, dasharray "2.5 2", opacity 0.35)
   if (hNodes.length >= 2) {
     const pairs = hNodes.flatMap((n, i) => hNodes.slice(i + 1).map(m => [n, m]));
     pairs.forEach(([p1, p2]) => {
       ctx.beginPath();
       ctx.moveTo(cx(p1.x), cy(p1.y));
       ctx.lineTo(cx(p2.x), cy(p2.y));
-      ctx.strokeStyle = "rgba(255,255,255,0.25)";
-      ctx.lineWidth = 1.5;
-      ctx.setLineDash([12, 9]);
+      ctx.strokeStyle = "rgba(255,255,255,0.35)";
+      ctx.lineWidth = (0.25 / 100) * side;
+      ctx.setLineDash([(2.5 / 100) * side, (2 / 100) * side]);
       ctx.stroke();
       ctx.setLineDash([]);
     });
   }
 
+  // Nodes (matches SVG: r=1.3 highlighted, r=0.6 others, outer ring r=5 opacity 0.18)
   visibleNodes.forEach(node => {
     const isH = highlighted.has(node.id);
     const nx = cx(node.x), ny = cy(node.y);
+
     if (isH) {
       ctx.beginPath();
-      ctx.arc(nx, ny, side * 0.05, 0, Math.PI * 2);
-      ctx.strokeStyle = "rgba(255,255,255,0.12)";
-      ctx.lineWidth = 1;
-      ctx.setLineDash([]);
+      ctx.arc(nx, ny, (5 / 100) * side, 0, Math.PI * 2);
+      ctx.strokeStyle = "rgba(255,255,255,0.18)";
+      ctx.lineWidth = (0.3 / 100) * side;
       ctx.stroke();
     }
+
     ctx.beginPath();
-    ctx.arc(nx, ny, isH ? side * 0.013 : side * 0.006, 0, Math.PI * 2);
-    ctx.fillStyle = isH ? "#fff" : "#2e2e2e";
+    ctx.arc(nx, ny, (isH ? 1.3 : 0.6) / 100 * side, 0, Math.PI * 2);
+    ctx.fillStyle = isH ? "#fff" : "#5a5a5a";
     ctx.fill();
 
+    // Labels (matches SVG: fontSize 1.85, dx ±2.2, dy -2.2/-3.5/4)
     const onRight = node.x > 58;
     const onTop   = node.y < 12;
     const onBot   = node.y > 88;
-    const ldx = onRight ? -(side * 0.022) : (side * 0.022);
-    const ldy = onTop ? (side * 0.04) : onBot ? -(side * 0.035) : -(side * 0.022);
-    ctx.fillStyle = isH ? "#fff" : "#3a3a3a";
-    ctx.font = `${isH ? "400" : "300"} ${Math.round(side * 0.013)}px "DM Mono", monospace`;
+    const ldx = (onRight ? -2.2 : 2.2) / 100 * side;
+    const ldy = (onTop ? 4 : onBot ? -3.5 : -2.2) / 100 * side;
+    ctx.fillStyle = isH ? "#fff" : "#555";
+    ctx.font = `${isH ? "400" : "300"} ${Math.round((1.85 / 100) * side)}px "DM Mono", monospace`;
     ctx.textAlign = onRight ? "right" : "left";
     ctx.fillText(node.id, nx + ldx, ny + ldy);
   });
   ctx.textAlign = "left";
 
   // ── FOOTER ────────────────────────────────────────────────────
-  dashedLine(H - cPadBot + 20);
-  ctx.fillStyle = "#444";
-  ctx.font = '300 22px "DM Mono", monospace';
-  ctx.textAlign = "center";
-  ctx.fillText("TAKETHETASTETEST.COM", W / 2, H - cPadBot + 68);
   ctx.fillStyle = "#333";
-  ctx.font = '300 18px "DM Mono", monospace';
-  ctx.fillText("GENERATED BY TAKETHETASTETEST.COM", W / 2, H - cPadBot + 100);
+  ctx.font = '300 27px "DM Mono", monospace';
+  ctx.textAlign = "center";
+  ctx.fillText("TAKETHETASTETEST.COM", W / 2, H - 54);
   ctx.textAlign = "left";
 
   return canvas;
@@ -903,7 +904,7 @@ export default function App() {
       const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
       const file = new File([blob], "my-taste.png", { type: "image/png" });
       if (navigator.share && navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file], title: archetype, text: `my style is ${styleWords.join(", ")}` });
+        await navigator.share({ files: [file], title: archetype, text: `My taste profile is ${archetype}. Get yours at takethetastetest.com` });
       } else {
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
@@ -939,8 +940,12 @@ export default function App() {
         name: name.trim(),
         email: email.trim(),
       });
-      if (err) console.error("Supabase signups error:", err.message);
-      else setSignupId(id);
+      if (err) {
+        if (err.code === "23505") { setEmailError("this email has already been registered"); return; }
+        console.error("Supabase signups error:", err.message);
+      } else {
+        setSignupId(id);
+      }
     }
 
     setStep("upload");
