@@ -206,12 +206,13 @@ const GlobalStyles = () => (
     @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400&family=DM+Mono:wght@300;400&display=swap');
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { background: #0a0a0a; color: #fff; overflow-x: hidden; }
-    .app { font-family: 'DM Mono', monospace; background: #0a0a0a; color: #fff; min-height: 100vh; }
+    .app { font-family: 'DM Mono', monospace; background: #0a0a0a; color: #fff; min-height: 100vh; padding-bottom: env(safe-area-inset-bottom); }
     .page { max-width: 1280px; margin: 0 auto; padding: 0 28px; }
     input, textarea, button { font-family: 'DM Mono', monospace; }
     input:focus, textarea:focus { outline: none; }
-    input::placeholder, textarea::placeholder { color: #444; }
-    button { cursor: pointer; }
+    input::placeholder, textarea::placeholder { color: #666; }
+    button { cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+    input, textarea { -webkit-tap-highlight-color: transparent; }
 
     @keyframes fadeUp    { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
     @keyframes wordReveal{ from { opacity:0; transform:translateY(24px) skewY(2deg); } to { opacity:1; transform:translateY(0) skewY(0); } }
@@ -294,7 +295,7 @@ const inputStyle = {
   border: "none",
   borderBottom: "1px solid #2a2a2a",
   padding: "12px 0",
-  fontSize: 14,
+  fontSize: 16,
   background: "transparent",
   color: "#fff",
   letterSpacing: "0.02em",
@@ -566,7 +567,7 @@ const Constellation = ({ highlightedWords, relevantWords }) => {
         const isH = highlighted.has(node.id);
         const showAll = relevant.size === 0;
         const r = isH ? 1.3 : showLabels ? 0.6 : showAll ? 0.3 : 0.5;
-        const fill = isH ? "#fff" : showLabels ? "#5a5a5a" : "#333";
+        const fill = isH ? "#fff" : showLabels ? "#777" : "#555";
         const { dx, dy, textAnchor } = getLabelProps(node);
 
         return (
@@ -585,7 +586,7 @@ const Constellation = ({ highlightedWords, relevantWords }) => {
                 textAnchor={textAnchor}
                 fontSize="1.85"
                 fontFamily="DM Mono, monospace"
-                fill={isH ? "#fff" : "#555"}
+                fill={isH ? "#fff" : "#777"}
                 fontWeight={isH ? "400" : "300"}
                 letterSpacing="0.03em"
               >
@@ -680,7 +681,7 @@ const AnimatedConstellation = ({ fullScreen = false }) => {
             <circle
               cx={nx} cy={ny}
               r={isGlow ? 4 : 1.5}
-              fill={isGlow ? "#fff" : "#555"}
+              fill={isGlow ? "#fff" : "#777"}
               style={{ transition: "fill 0.35s ease" }}
             />
           </g>
@@ -724,12 +725,12 @@ const createShareCard = async (words, relevant, archetype, percentages, userName
 
   // ── HEADER ROW ────────────────────────────────────────────────
   ctx.font = '300 29px "DM Mono", monospace';
-  ctx.fillStyle = "#444";
+  ctx.fillStyle = "#666";
   ctx.textAlign = "left";
   ctx.fillText("TASTE PROFILE", PAD, y);
 
   const dateStr = new Date().toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" }).replace(/\//g, ".");
-  ctx.fillStyle = "#333";
+  ctx.fillStyle = "#555";
   ctx.font = '300 27px "DM Mono", monospace';
   ctx.textAlign = "right";
   ctx.fillText(dateStr, W - PAD, y);
@@ -758,7 +759,7 @@ const createShareCard = async (words, relevant, archetype, percentages, userName
 
   // ── STYLE BREAKDOWN ───────────────────────────────────────────
   const firstName = (userName || "your").split(" ")[0].toLowerCase();
-  ctx.fillStyle = "#444";
+  ctx.fillStyle = "#666";
   ctx.font = '300 29px "DM Mono", monospace';
   ctx.fillText(`${firstName}'s style is:`.toUpperCase(), PAD, y);
   y += 31;
@@ -772,7 +773,7 @@ const createShareCard = async (words, relevant, archetype, percentages, userName
     ctx.fillText(word.toUpperCase(), PAD, y);
 
     ctx.font = `300 ${pctSizes[i]}px "DM Mono", monospace`;
-    ctx.fillStyle = "#555";
+    ctx.fillStyle = "#777";
     ctx.textAlign = "right";
     ctx.fillText(`${percentages?.[i] ?? [50, 30, 20][i]}%`, W - PAD, y);
     ctx.textAlign = "left";
@@ -828,7 +829,7 @@ const createShareCard = async (words, relevant, archetype, percentages, userName
 
     ctx.beginPath();
     ctx.arc(nx, ny, (isH ? 1.3 : 0.6) / 100 * side, 0, Math.PI * 2);
-    ctx.fillStyle = isH ? "#fff" : "#5a5a5a";
+    ctx.fillStyle = isH ? "#fff" : "#777";
     ctx.fill();
 
     // Labels (matches SVG: fontSize 1.85, dx ±2.2, dy -2.2/-3.5/4)
@@ -837,7 +838,7 @@ const createShareCard = async (words, relevant, archetype, percentages, userName
     const onBot   = node.y > 88;
     const ldx = (onRight ? -2.2 : 2.2) / 100 * side;
     const ldy = (onTop ? 4 : onBot ? -3.5 : -2.2) / 100 * side;
-    ctx.fillStyle = isH ? "#fff" : "#555";
+    ctx.fillStyle = isH ? "#fff" : "#777";
     ctx.font = `${isH ? "400" : "300"} ${Math.round((1.85 / 100) * side)}px "DM Mono", monospace`;
     ctx.textAlign = onRight ? "right" : "left";
     ctx.fillText(node.id, nx + ldx, ny + ldy);
@@ -845,7 +846,7 @@ const createShareCard = async (words, relevant, archetype, percentages, userName
   ctx.textAlign = "left";
 
   // ── FOOTER ────────────────────────────────────────────────────
-  ctx.fillStyle = "#333";
+  ctx.fillStyle = "#555";
   ctx.font = '300 27px "DM Mono", monospace';
   ctx.textAlign = "center";
   ctx.fillText("TAKETHETASTETEST.COM", W / 2, H - 54);
@@ -856,10 +857,11 @@ const createShareCard = async (words, relevant, archetype, percentages, userName
 
 // ─── APP ─────────────────────────────────────────────────────────────────────
 export default function App() {
-  // Steps: home → email → upload → questions → generating → results
+  // Steps: home → upload → questions → signup → generating → results
   const [step, setStep]                           = useState("home");
   const [name, setName]                           = useState("");
   const [email, setEmail]                         = useState("");
+  const [phone, setPhone]                         = useState("");
   const [description, setDescription]             = useState("");
   const [photos, setPhotos]                       = useState([null, null, null]);
   const [photoPreviews, setPhotoPreviews]         = useState([null, null, null]);
@@ -927,28 +929,99 @@ export default function App() {
     setPhotos(prev => { const next = [...prev]; next[index] = resized; return next; });
   };
 
-  const handleEmail = async (e) => {
+  const handleQuestionsNext = (e) => {
+    e.preventDefault();
+    const answeredCount = Object.keys(thisThatAnswers).length;
+    if (thisThatQuestions && answeredCount < thisThatQuestions.length) {
+      setError("please answer all questions to continue");
+      return;
+    }
+    setError("");
+    setStep("signup");
+  };
+
+  const handleSignup = async (e) => {
     e.preventDefault();
     if (!name.trim()) { setEmailError("please enter your name"); return; }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setEmailError("please enter a valid email"); return; }
+    if (!phone.trim()) { setEmailError("please enter your phone number"); return; }
+    if (!/^\+?[\d\s\-().]{7,15}$/.test(phone.trim())) { setEmailError("please enter a valid phone number"); return; }
     setEmailError("");
 
+    let savedId = null;
+    let photoUrls = [];
     if (supabase) {
       const id = crypto.randomUUID();
       const { error: err } = await supabase.from("signups").insert({
         id,
         name: name.trim(),
         email: email.trim(),
+        phone: phone.trim() || null,
       });
       if (err) {
-        if (err.code === "23505") { setEmailError("this email has already been registered"); return; }
-        console.error("Supabase signups error:", err.message);
+        if (err.code === "23505" || err.code === "409" || err.message?.toLowerCase().includes("duplicate") || err.message?.toLowerCase().includes("unique")) {
+          // duplicate email — still let them through
+        } else {
+          console.error("Supabase signups error:", err.code, err.message);
+        }
       } else {
+        savedId = id;
         setSignupId(id);
+
+        const validPhotos = photos.filter(Boolean);
+        const uploads = await Promise.all(
+          validPhotos.map(async (b64, i) => {
+            const blob = await fetch(`data:image/jpeg;base64,${b64}`).then(r => r.blob());
+            const path = `${id}/photo_${i + 1}.jpg`;
+            const { error: uploadErr } = await supabase.storage.from("outfit-photos").upload(path, blob, { contentType: "image/jpeg" });
+            if (uploadErr) { console.error("photo upload error:", uploadErr.message); return null; }
+            return supabase.storage.from("outfit-photos").getPublicUrl(path).data.publicUrl;
+          })
+        );
+        photoUrls = uploads.filter(Boolean);
       }
     }
 
-    setStep("upload");
+    setStep("generating");
+
+    const validPhotos = photos.filter(Boolean);
+    const [result] = await Promise.all([
+      generateStyleWords(validPhotos, description, thisThatQuestions, thisThatAnswers, lookingFor),
+      new Promise(resolve => setTimeout(resolve, 2500)),
+    ]);
+    const finalWords       = result?.words       || ["minimal", "editorial", "dark"];
+    const finalRelevant    = result?.relevant    || getDefaultRelevant(finalWords);
+    const finalArchetype   = result?.archetype   || "The Style Explorer";
+    const finalSubtitle    = result?.subtitle    || "";
+    const finalPercentages = result?.percentages || [50, 30, 20];
+    setStyleWords(finalWords);
+    setRelevantWords(finalRelevant);
+    setArchetype(finalArchetype);
+    setSubtitle(finalSubtitle);
+    setStylePercentages(finalPercentages);
+
+    if (supabase) {
+      const formatQuestion = (q) =>
+        `at ${q.situation}... ${q.optionA} OR ${q.optionB}`;
+
+      const { error: err } = await supabase.from("taste_results").insert({
+        signup_id: savedId || null,
+        description: description.trim(),
+        question_1: thisThatQuestions?.[0] ? formatQuestion(thisThatQuestions[0]) : null,
+        answer_1: thisThatAnswers[0] === "A" ? thisThatQuestions?.[0]?.optionA : thisThatQuestions?.[0]?.optionB,
+        question_2: thisThatQuestions?.[1] ? formatQuestion(thisThatQuestions[1]) : null,
+        answer_2: thisThatAnswers[1] === "A" ? thisThatQuestions?.[1]?.optionA : thisThatQuestions?.[1]?.optionB,
+        question_3: thisThatQuestions?.[2] ? formatQuestion(thisThatQuestions[2]) : null,
+        answer_3: thisThatAnswers[2] === "A" ? thisThatQuestions?.[2]?.optionA : thisThatQuestions?.[2]?.optionB,
+        style_words: finalWords,
+        archetype: finalArchetype,
+        looking_for: lookingFor.trim() || null,
+        photo_urls: photoUrls.length > 0 ? photoUrls : null,
+      });
+      if (err) console.error("Supabase taste_results error:", err.message);
+    }
+
+    setStep("results");
   };
 
   const handleUpload = async (e) => {
@@ -987,54 +1060,6 @@ export default function App() {
     setThisThatAnswers(prev => ({ ...prev, [questionIndex]: answer }));
   };
 
-  const handleGenerate = async (e) => {
-    e.preventDefault();
-    const answeredCount = Object.keys(thisThatAnswers).length;
-    if (thisThatQuestions && answeredCount < thisThatQuestions.length) {
-      setError("please answer all questions to continue");
-      return;
-    }
-    setError("");
-    setStep("generating");
-
-    const validPhotos = photos.filter(Boolean);
-    const [result] = await Promise.all([
-      generateStyleWords(validPhotos, description, thisThatQuestions, thisThatAnswers, lookingFor),
-      new Promise(resolve => setTimeout(resolve, 2500)),
-    ]);
-    const finalWords       = result?.words       || ["minimal", "editorial", "dark"];
-    const finalRelevant    = result?.relevant    || getDefaultRelevant(finalWords);
-    const finalArchetype   = result?.archetype   || "The Style Explorer";
-    const finalSubtitle    = result?.subtitle    || "";
-    const finalPercentages = result?.percentages || [50, 30, 20];
-    setStyleWords(finalWords);
-    setRelevantWords(finalRelevant);
-    setArchetype(finalArchetype);
-    setSubtitle(finalSubtitle);
-    setStylePercentages(finalPercentages);
-
-    if (supabase) {
-      const formatQuestion = (q) =>
-        `at ${q.situation}... ${q.optionA} OR ${q.optionB}`;
-
-      const { error: err } = await supabase.from("taste_results").insert({
-        signup_id: signupId || null,
-        description: description.trim(),
-        question_1: thisThatQuestions?.[0] ? formatQuestion(thisThatQuestions[0]) : null,
-        answer_1: thisThatAnswers[0] === "A" ? thisThatQuestions?.[0]?.optionA : thisThatQuestions?.[0]?.optionB,
-        question_2: thisThatQuestions?.[1] ? formatQuestion(thisThatQuestions[1]) : null,
-        answer_2: thisThatAnswers[1] === "A" ? thisThatQuestions?.[1]?.optionA : thisThatQuestions?.[1]?.optionB,
-        question_3: thisThatQuestions?.[2] ? formatQuestion(thisThatQuestions[2]) : null,
-        answer_3: thisThatAnswers[2] === "A" ? thisThatQuestions?.[2]?.optionA : thisThatQuestions?.[2]?.optionB,
-        style_words: finalWords,
-        archetype: finalArchetype,
-        looking_for: lookingFor.trim() || null,
-      });
-      if (err) console.error("Supabase taste_results error:", err.message);
-    }
-
-    setStep("results");
-  };
 
   const backBtn = (target) => (
     <button
@@ -1079,7 +1104,7 @@ export default function App() {
                 }}>
                   tastetest
                 </span>
-                <span style={{ fontSize: 9, letterSpacing: "0.18em", color: "#555", textTransform: "uppercase" }}>
+                <span style={{ fontSize: 9, letterSpacing: "0.18em", color: "#777", textTransform: "uppercase" }}>
                   early access
                 </span>
               </nav>
@@ -1111,20 +1136,20 @@ export default function App() {
                 <p style={{ fontSize: 13, color: "#888", lineHeight: 1.8, marginBottom: 44, maxWidth: 480, letterSpacing: "0.02em", opacity: heroReady ? 1 : 0, animation: heroReady ? "fadeUp 0.55s cubic-bezier(0.16,1,0.3,1) 0s both" : "none" }}>
                   what if you didn't have to spend hours digging through search results, social media posts, and brand websites to find a piece that fits your style?
                 </p>
-                <button onClick={() => setStep("email")} style={{ ...btnStyle, opacity: heroReady ? 1 : 0, animation: heroReady ? "fadeUp 0.55s cubic-bezier(0.16,1,0.3,1) 0.18s both" : "none" }}>
+                <button onClick={() => setStep("upload")} style={{ ...btnStyle, opacity: heroReady ? 1 : 0, animation: heroReady ? "fadeUp 0.55s cubic-bezier(0.16,1,0.3,1) 0.18s both" : "none" }}>
                   take the taste test →
                 </button>
-                <p style={{ fontSize: 11, color: "#555", marginTop: 16, letterSpacing: "0.04em", lineHeight: 1.6, opacity: heroReady ? 1 : 0, animation: heroReady ? "fadeUp 0.55s cubic-bezier(0.16,1,0.3,1) 0.32s both" : "none" }}>
+                <p style={{ fontSize: 11, color: "#777", marginTop: 16, letterSpacing: "0.04em", lineHeight: 1.6, opacity: heroReady ? 1 : 0, animation: heroReady ? "fadeUp 0.55s cubic-bezier(0.16,1,0.3,1) 0.32s both" : "none" }}>
                   take the test to get your taste profile today <br /> and to get early access when we launch
                 </p>
               </div>
             </div>
           )}
 
-          {/* ── EMAIL ────────────────────────────────────────────────────── */}
-          {step === "email" && (
+          {/* ── SIGNUP ───────────────────────────────────────────────────── */}
+          {step === "signup" && (
             <div className="fade-up" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "72px 0 88px", minHeight: "calc(100vh - 82px)", position: "relative" }}>
-              {backBtn("home")}
+              {backBtn("questions")}
               <h2 style={{
                 fontFamily: "'Playfair Display', serif",
                 fontStyle: "italic",
@@ -1135,12 +1160,12 @@ export default function App() {
                 letterSpacing: "-0.01em",
                 textAlign: "center",
               }}>
-                let's get started
+                unlock your results.
               </h2>
               <p style={{ fontSize: 13, color: "#888", lineHeight: 1.8, marginBottom: 40, maxWidth: 380, letterSpacing: "0.02em", textAlign: "center" }}>
-                enter your email to get your taste profile today (and get early access when we officially launch)
+                enter your info to reveal your taste profile and get early access when we launch
               </p>
-              <form onSubmit={handleEmail} style={{ width: "100%", maxWidth: 400 }}>
+              <form onSubmit={handleSignup} style={{ width: "100%", maxWidth: 400 }}>
                 <div style={{ marginBottom: 14 }}>
                   <input
                     type="text"
@@ -1151,7 +1176,7 @@ export default function App() {
                     autoComplete="name"
                   />
                 </div>
-                <div style={{ marginBottom: 28 }}>
+                <div style={{ marginBottom: 14 }}>
                   <input
                     type="email"
                     placeholder="your email"
@@ -1161,9 +1186,19 @@ export default function App() {
                     autoComplete="email"
                   />
                 </div>
+                <div style={{ marginBottom: 28 }}>
+                  <input
+                    type="tel"
+                    placeholder="your phone number"
+                    value={phone}
+                    onChange={e => setPhone(e.target.value)}
+                    style={inputStyle}
+                    autoComplete="tel"
+                  />
+                </div>
                 {emailError && <p style={{ fontSize: 11, color: "#999", marginBottom: 12 }}>{emailError}</p>}
                 <button type="submit" style={{ ...btnStyle, width: "100%", textAlign: "center" }}>
-                  continue →
+                  reveal my taste →
                 </button>
               </form>
             </div>
@@ -1172,7 +1207,7 @@ export default function App() {
           {/* ── UPLOAD ───────────────────────────────────────────────────── */}
           {step === "upload" && (
             <div className="fade-up" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "72px 0 88px", minHeight: "calc(100vh - 82px)", position: "relative" }}>
-              {backBtn("email")}
+              {backBtn("home")}
               <h2 style={{
                 fontFamily: "'Playfair Display', serif",
                 fontStyle: "italic",
@@ -1217,10 +1252,10 @@ export default function App() {
                             style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
                           />
                         ) : (
-                          <span style={{ fontSize: 20, color: "#333", lineHeight: 1 }}>+</span>
+                          <span style={{ fontSize: 20, color: "#555", lineHeight: 1 }}>+</span>
                         )}
                       </div>
-                      <p style={{ fontSize: 9, color: "#444", letterSpacing: "0.08em", textAlign: "center", textTransform: "uppercase" }}>
+                      <p style={{ fontSize: 9, color: "#666", letterSpacing: "0.08em", textAlign: "center", textTransform: "uppercase" }}>
                         {i === 2 ? "optional" : "required"}
                       </p>
                       <input
@@ -1252,22 +1287,22 @@ export default function App() {
           )}
 
           {/* ── QUESTIONS ────────────────────────────────────────────────── */}
-          {step === "questions" && (
-            <div className="fade-up" style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "72px 0 88px", minHeight: "calc(100vh - 82px)", position: "relative" }}>
-              {!questionsLoading && backBtn("upload")}
+          {step === "questions" && questionsLoading && (
+            <div className="generating-layout fade-in">
+              <p style={{ fontSize: 11, letterSpacing: "0.14em", color: "#aaa", textTransform: "uppercase" }}>
+                reading your style...
+              </p>
+              <div style={{ width: "100%", maxWidth: 560 }}>
+                <AnimatedConstellation />
+              </div>
+            </div>
+          )}
 
-              {questionsLoading ? (
-                <div className="generating-layout fade-in">
-                  <p style={{ fontSize: 11, letterSpacing: "0.14em", color: "#aaa", textTransform: "uppercase" }}>
-                    reading your style...
-                  </p>
-                  <div style={{ width: "100%", maxWidth: 560 }}>
-                    <AnimatedConstellation />
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <h2 style={{
+          {step === "questions" && !questionsLoading && (
+            <div className="fade-up" style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "72px 0 88px", minHeight: "calc(100vh - 82px)", position: "relative" }}>
+              {backBtn("upload")}
+
+              <h2 style={{
                     fontFamily: "'Playfair Display', serif",
                     fontStyle: "italic",
                     fontWeight: 400,
@@ -1286,7 +1321,7 @@ export default function App() {
                   <div style={{ width: "100%", maxWidth: 440, display: "flex", flexDirection: "column", gap: 32 }}>
                     {thisThatQuestions?.map((q, i) => (
                       <div key={i}>
-                        <p style={{ fontSize: 10, color: "#666", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>
+                        <p style={{ fontSize: 10, color: "#888", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>
                           {i + 1} of {thisThatQuestions.length}
                         </p>
                         <p style={{ fontSize: 13, color: "#ccc", marginBottom: 14, lineHeight: 1.6, letterSpacing: "0.01em" }}>
@@ -1323,7 +1358,7 @@ export default function App() {
 
                     {/* Looking for question */}
                     <div>
-                      <p style={{ fontSize: 10, color: "#666", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>
+                      <p style={{ fontSize: 10, color: "#888", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>
                         one more
                       </p>
                       <p style={{ fontSize: 13, color: "#ccc", marginBottom: 14, lineHeight: 1.6, letterSpacing: "0.01em" }}>
@@ -1334,20 +1369,18 @@ export default function App() {
                         placeholder="e.g. the perfect white shirt, going-out tops, fall transition pieces..."
                         value={lookingFor}
                         onChange={e => setLookingFor(e.target.value)}
-                        style={{ ...inputStyle, fontSize: 12 }}
+                        style={{ ...inputStyle }}
                       />
                     </div>
 
                     {error && <p style={{ fontSize: 11, color: "#999" }}>{error}</p>}
                     <button
-                      onClick={handleGenerate}
+                      onClick={handleQuestionsNext}
                       style={{ ...btnStyle, width: "100%", textAlign: "center", marginTop: 8 }}
                     >
-                      generate my taste profile →
+                      see my results →
                     </button>
                   </div>
-                </>
-              )}
             </div>
           )}
 
@@ -1383,7 +1416,7 @@ export default function App() {
                 <p style={{
                   fontFamily: "'DM Mono', monospace",
                   fontSize: "clamp(11px, 1.3vw, 13px)",
-                  color: "#666",
+                  color: "#888",
                   textAlign: "center",
                   maxWidth: 320,
                   lineHeight: 1.6,
@@ -1413,8 +1446,8 @@ export default function App() {
               }}>
                 {/* Receipt header */}
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
-                  <span style={{ fontSize: 7.5, color: "#444", letterSpacing: "0.12em", textTransform: "uppercase" }}>taste profile</span>
-                  <span style={{ fontSize: 7, color: "#333", letterSpacing: "0.06em" }}>
+                  <span style={{ fontSize: 7.5, color: "#666", letterSpacing: "0.12em", textTransform: "uppercase" }}>taste profile</span>
+                  <span style={{ fontSize: 7, color: "#555", letterSpacing: "0.06em" }}>
                     {new Date().toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" }).replace(/\//g, ".")}
                   </span>
                 </div>
@@ -1436,7 +1469,7 @@ export default function App() {
                 <div style={{ borderTop: "1px dashed #252525", marginBottom: 10 }} />
 
                 {/* Style breakdown */}
-                <p style={{ fontSize: 7.5, color: "#444", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>
+                <p style={{ fontSize: 7.5, color: "#666", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>
                   {name.split(" ")[0].toLowerCase()}'s style is:
                 </p>
                 {styleWords.map((word, i) => (
@@ -1449,7 +1482,7 @@ export default function App() {
                     <span style={{ fontSize: [13, 11, 9.5][i], color: "#fff", letterSpacing: "0.08em", textTransform: "uppercase" }}>
                       {word}
                     </span>
-                    <span style={{ fontSize: [11, 9.5, 8.5][i], color: "#555", letterSpacing: "0.06em" }}>
+                    <span style={{ fontSize: [11, 9.5, 8.5][i], color: "#777", letterSpacing: "0.06em" }}>
                       {stylePercentages[i]}%
                     </span>
                   </div>
@@ -1462,7 +1495,7 @@ export default function App() {
                 </div>
 
                 {/* Footer */}
-                <p style={{ fontSize: 7, color: "#333", letterSpacing: "0.1em", textTransform: "uppercase", marginTop: 8, textAlign: "center" }}>
+                <p style={{ fontSize: 7, color: "#555", letterSpacing: "0.1em", textTransform: "uppercase", marginTop: 8, textAlign: "center" }}>
                   takethetastetest.com
                 </p>
               </div>
