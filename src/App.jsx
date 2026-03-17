@@ -846,7 +846,7 @@ const createShareCard = async (words, relevant, archetype, percentages, userName
   ctx.textAlign = "left";
 
   // ── FOOTER ────────────────────────────────────────────────────
-  ctx.fillStyle = "#555";
+  ctx.fillStyle = "#fff";
   ctx.font = '300 27px "DM Mono", monospace';
   ctx.textAlign = "center";
   ctx.fillText("TAKETHETASTETEST.COM", W / 2, H - 54);
@@ -1482,7 +1482,7 @@ export default function App() {
                 </div>
 
                 {/* Footer */}
-                <p style={{ fontSize: 7, color: "#555", letterSpacing: "0.1em", textTransform: "uppercase", marginTop: 8, textAlign: "center" }}>
+                <p style={{ fontSize: 7, color: "#fff", letterSpacing: "0.1em", textTransform: "uppercase", marginTop: 8, textAlign: "center" }}>
                   takethetastetest.com
                 </p>
               </div>
