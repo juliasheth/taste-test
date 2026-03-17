@@ -877,6 +877,13 @@ export default function App() {
   const [error, setError]                         = useState("");
   const [emailError, setEmailError]               = useState("");
   const [sharing, setSharing]                     = useState(false);
+  const [phoneVerified, setPhoneVerified]         = useState(false);
+  const [showCodeInput, setShowCodeInput]         = useState(false);
+  const [verificationCode, setVerificationCode]   = useState("");
+  const [verifyError, setVerifyError]             = useState("");
+  const [sendingCode, setSendingCode]             = useState(false);
+  const [verifyingCode, setVerifyingCode]         = useState(false);
+  const [smsOptin, setSmsOptin]                   = useState(false);
   const [signupId, setSignupId]                   = useState(null);
   const [typed, setTyped]                         = useState("");
   const [heroReady, setHeroReady]                 = useState(false);
@@ -940,12 +947,68 @@ export default function App() {
     setStep("signup");
   };
 
+  const formatPhoneE164 = (raw) => {
+    const digits = raw.replace(/\D/g, "");
+    if (raw.startsWith("+")) return "+" + digits;
+    if (digits.length === 10) return "+1" + digits;
+    if (digits.length === 11 && digits.startsWith("1")) return "+" + digits;
+    return "+" + digits;
+  };
+
+  const sendVerificationCode = async () => {
+    setVerifyError("");
+    if (!phone.trim()) { setVerifyError("please enter your phone number"); return; }
+    if (!/^\+?[\d\s\-().]{7,15}$/.test(phone.trim())) { setVerifyError("please enter a valid phone number"); return; }
+    setSendingCode(true);
+    try {
+      const res = await fetch("/api/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: formatPhoneE164(phone.trim()) }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setShowCodeInput(true);
+      } else {
+        setVerifyError(data.error || "failed to send code");
+      }
+    } catch {
+      setVerifyError("failed to send code");
+    }
+    setSendingCode(false);
+  };
+
+  const verifyCode = async () => {
+    setVerifyError("");
+    setVerifyingCode(true);
+    try {
+      const res = await fetch("/api/verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: formatPhoneE164(phone.trim()), code: verificationCode }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setPhoneVerified(true);
+        setShowCodeInput(false);
+        setVerificationCode("");
+      } else {
+        setVerifyError(data.error || "invalid code");
+      }
+    } catch {
+      setVerifyError("verification failed");
+    }
+    setVerifyingCode(false);
+  };
+
   const handleSignup = async (e) => {
     e.preventDefault();
     if (!name.trim()) { setEmailError("please enter your name"); return; }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setEmailError("please enter a valid email"); return; }
     if (!phone.trim()) { setEmailError("please enter your phone number"); return; }
     if (!/^\+?[\d\s\-().]{7,15}$/.test(phone.trim())) { setEmailError("please enter a valid phone number"); return; }
+    if (!phoneVerified) { setEmailError("please verify your phone number"); return; }
+    setSmsOptin(true);
     setEmailError("");
 
     const submissionId = crypto.randomUUID();
@@ -1004,6 +1067,7 @@ export default function App() {
         archetype: finalArchetype,
         looking_for: lookingFor.trim() || null,
         photo_urls: photoUrls.length > 0 ? photoUrls : null,
+        sms_optin: true,
       });
       if (err) console.error("Supabase submissions error:", err.message);
     }
@@ -1147,10 +1211,10 @@ export default function App() {
                 letterSpacing: "-0.01em",
                 textAlign: "center",
               }}>
-                unlock your results.
+                unlock your results
               </h2>
               <p style={{ fontSize: 13, color: "#888", lineHeight: 1.8, marginBottom: 40, maxWidth: 380, letterSpacing: "0.02em", textAlign: "center" }}>
-                enter your info to reveal your taste profile and get early access when we launch
+                enter your info to reveal your taste profile
               </p>
               <form onSubmit={handleSignup} style={{ width: "100%", maxWidth: 400 }}>
                 <div style={{ marginBottom: 14 }}>
@@ -1173,20 +1237,91 @@ export default function App() {
                     autoComplete="email"
                   />
                 </div>
-                <div style={{ marginBottom: 28 }}>
+                <div style={{ marginBottom: 8 }}>
                   <input
                     type="tel"
                     placeholder="your phone number"
                     value={phone}
-                    onChange={e => setPhone(e.target.value)}
+                    onChange={e => { setPhone(e.target.value); setPhoneVerified(false); setShowCodeInput(false); setVerifyError(""); }}
                     style={inputStyle}
                     autoComplete="tel"
+                    disabled={phoneVerified}
                   />
                 </div>
+                {!phoneVerified && (
+                  <div style={{ marginBottom: 20 }}>
+                    {!showCodeInput ? (
+                      <button
+                        type="button"
+                        onClick={sendVerificationCode}
+                        disabled={sendingCode}
+                        style={{
+                          background: "none",
+                          border: "1px solid #333",
+                          color: sendingCode ? "#555" : "#888",
+                          fontSize: 11,
+                          letterSpacing: "0.06em",
+                          padding: "10px 16px",
+                          cursor: sendingCode ? "default" : "pointer",
+                          width: "100%",
+                        }}
+                      >
+                        {sendingCode ? "sending..." : "send verification code"}
+                      </button>
+                    ) : (
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          maxLength={6}
+                          placeholder="6-digit code"
+                          value={verificationCode}
+                          onChange={e => setVerificationCode(e.target.value)}
+                          style={{ ...inputStyle, flex: 1, marginBottom: 0 }}
+                        />
+                        <button
+                          type="button"
+                          onClick={verifyCode}
+                          disabled={verifyingCode}
+                          style={{
+                            background: "#fff",
+                            border: "none",
+                            color: "#0a0a0a",
+                            fontSize: 11,
+                            letterSpacing: "0.06em",
+                            padding: "10px 16px",
+                            cursor: verifyingCode ? "default" : "pointer",
+                            whiteSpace: "nowrap",
+                            opacity: verifyingCode ? 0.5 : 1,
+                          }}
+                        >
+                          {verifyingCode ? "verifying..." : "verify"}
+                        </button>
+                      </div>
+                    )}
+                    {verifyError && <p style={{ fontSize: 11, color: "#999", marginTop: 8 }}>{verifyError}</p>}
+                    {showCodeInput && (
+                      <button
+                        type="button"
+                        onClick={sendVerificationCode}
+                        disabled={sendingCode}
+                        style={{ background: "none", border: "none", color: "#555", fontSize: 10, letterSpacing: "0.04em", marginTop: 8, cursor: "pointer", padding: 0 }}
+                      >
+                        resend code
+                      </button>
+                    )}
+                  </div>
+                )}
+                {phoneVerified && (
+                  <p style={{ fontSize: 11, color: "#888", letterSpacing: "0.04em", marginBottom: 20 }}>phone verified ✓</p>
+                )}
                 {emailError && <p style={{ fontSize: 11, color: "#999", marginBottom: 12 }}>{emailError}</p>}
-                <button type="submit" style={{ ...btnStyle, width: "100%", textAlign: "center" }}>
+                <button type="submit" disabled={!phoneVerified} style={{ ...btnStyle, width: "100%", textAlign: "center", opacity: phoneVerified ? 1 : 0.4, cursor: phoneVerified ? "pointer" : "default" }}>
                   reveal my taste →
                 </button>
+                <p style={{ fontSize: 10, color: "#555", letterSpacing: "0.03em", lineHeight: 1.7, marginTop: 12, textAlign: "center" }}>
+                  by continuing you agree to receive texts from us. reply STOP anytime.
+                </p>
               </form>
             </div>
           )}
