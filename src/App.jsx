@@ -378,7 +378,7 @@ Each question names a specific real-world situation and presents two contrasting
 
 Keep outfit descriptions concise but specific: mention 2-3 key pieces or details (e.g. "oversized vintage blazer, straight-leg jeans, white sneakers" vs "fitted silk top, tailored trousers, kitten heels").
 
-Make the situations feel real and relatable — things like "a casual lunch with friends", "a first date at a wine bar", "running errands on a Saturday morning", "a gallery opening", "a lazy Sunday at home but make it cute".
+The three situations MUST be clearly distinct from each other — vary the type of event (e.g. social outing, formal occasion, casual errand), the season or weather (e.g. summer heat, cold winter day, transitional fall), and the energy level (e.g. low-key vs. dressed up). Do not generate three situations that are all similar in vibe or formality. For example, do NOT use three casual daytime outings — mix it up with something like a hot summer errand run, a winter dinner party, and a night out.
 
 Return ONLY valid JSON in this exact format, no other text:
 {"questions":[
@@ -737,7 +737,7 @@ const createShareCard = async (words, relevant, archetype, percentages, userName
   ctx.textAlign = "left";
   y += 38;
 
-  thinDash(y); y += 46;
+  thinDash(y); y += 110;
 
   // ── ARCHETYPE ─────────────────────────────────────────────────
   ctx.fillStyle = "#fff";
@@ -762,7 +762,7 @@ const createShareCard = async (words, relevant, archetype, percentages, userName
   ctx.fillStyle = "#666";
   ctx.font = '300 29px "DM Mono", monospace';
   ctx.fillText(`${firstName}'s style is:`.toUpperCase(), PAD, y);
-  y += 31;
+  y += 70;
 
   const wordSizes = [50, 42, 37];
   const pctSizes  = [42, 37, 33];
@@ -948,38 +948,22 @@ export default function App() {
     if (!/^\+?[\d\s\-().]{7,15}$/.test(phone.trim())) { setEmailError("please enter a valid phone number"); return; }
     setEmailError("");
 
-    let savedId = null;
+    const submissionId = crypto.randomUUID();
+    setSignupId(submissionId);
+
     let photoUrls = [];
     if (supabase) {
-      const id = crypto.randomUUID();
-      const { error: err } = await supabase.from("signups").insert({
-        id,
-        name: name.trim(),
-        email: email.trim(),
-        phone: phone.trim() || null,
-      });
-      if (err) {
-        if (err.code === "23505" || err.code === "409" || err.message?.toLowerCase().includes("duplicate") || err.message?.toLowerCase().includes("unique")) {
-          // duplicate email — still let them through
-        } else {
-          console.error("Supabase signups error:", err.code, err.message);
-        }
-      } else {
-        savedId = id;
-        setSignupId(id);
-
-        const validPhotos = photos.filter(Boolean);
-        const uploads = await Promise.all(
-          validPhotos.map(async (b64, i) => {
-            const blob = await fetch(`data:image/jpeg;base64,${b64}`).then(r => r.blob());
-            const path = `${id}/photo_${i + 1}.jpg`;
-            const { error: uploadErr } = await supabase.storage.from("outfit-photos").upload(path, blob, { contentType: "image/jpeg" });
-            if (uploadErr) { console.error("photo upload error:", uploadErr.message); return null; }
-            return supabase.storage.from("outfit-photos").getPublicUrl(path).data.publicUrl;
-          })
-        );
-        photoUrls = uploads.filter(Boolean);
-      }
+      const validPhotos = photos.filter(Boolean);
+      const uploads = await Promise.all(
+        validPhotos.map(async (b64, i) => {
+          const blob = await fetch(`data:image/jpeg;base64,${b64}`).then(r => r.blob());
+          const path = `${submissionId}/photo_${i + 1}.jpg`;
+          const { error: uploadErr } = await supabase.storage.from("outfit-photos").upload(path, blob, { contentType: "image/jpeg" });
+          if (uploadErr) { console.error("photo upload error:", uploadErr.message); return null; }
+          return supabase.storage.from("outfit-photos").getPublicUrl(path).data.publicUrl;
+        })
+      );
+      photoUrls = uploads.filter(Boolean);
     }
 
     setStep("generating");
@@ -1004,8 +988,11 @@ export default function App() {
       const formatQuestion = (q) =>
         `at ${q.situation}... ${q.optionA} OR ${q.optionB}`;
 
-      const { error: err } = await supabase.from("taste_results").insert({
-        signup_id: savedId || null,
+      const { error: err } = await supabase.from("submissions").insert({
+        id: submissionId,
+        name: name.trim(),
+        email: email.trim(),
+        phone: phone.trim() || null,
         description: description.trim(),
         question_1: thisThatQuestions?.[0] ? formatQuestion(thisThatQuestions[0]) : null,
         answer_1: thisThatAnswers[0] === "A" ? thisThatQuestions?.[0]?.optionA : thisThatQuestions?.[0]?.optionB,
@@ -1018,7 +1005,7 @@ export default function App() {
         looking_for: lookingFor.trim() || null,
         photo_urls: photoUrls.length > 0 ? photoUrls : null,
       });
-      if (err) console.error("Supabase taste_results error:", err.message);
+      if (err) console.error("Supabase submissions error:", err.message);
     }
 
     setStep("results");
