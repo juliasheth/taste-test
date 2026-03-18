@@ -210,7 +210,7 @@ const GlobalStyles = () => (
     .page { max-width: 1280px; margin: 0 auto; padding: 0 28px; }
     input, textarea, button { font-family: 'DM Mono', monospace; }
     input:focus, textarea:focus { outline: none; }
-    input::placeholder, textarea::placeholder { color: #666; }
+    input::placeholder, textarea::placeholder { color: #909090; }
     button { cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
     input, textarea { -webkit-tap-highlight-color: transparent; }
 
@@ -235,7 +235,7 @@ const GlobalStyles = () => (
       justify-content: space-between;
       align-items: center;
       padding: 28px 0;
-      border-bottom: 1px solid #161616;
+      border-bottom: 1px solid rgba(140, 200, 255, 0.1);
     }
 
     /* ── Home hero ── */
@@ -293,7 +293,7 @@ const GlobalStyles = () => (
 const inputStyle = {
   width: "100%",
   border: "none",
-  borderBottom: "1px solid #2a2a2a",
+  borderBottom: "1px solid rgba(140, 200, 255, 0.22)",
   padding: "12px 0",
   fontSize: 16,
   background: "transparent",
@@ -316,7 +316,7 @@ const btnStyle = {
 const ghostBtnStyle = {
   background: "transparent",
   color: "#fff",
-  border: "1px solid #2a2a2a",
+  border: "1px solid rgba(140, 200, 255, 0.3)",
   padding: "14px 28px",
   fontSize: 11,
   letterSpacing: "0.12em",
@@ -546,10 +546,10 @@ const Constellation = ({ highlightedWords, relevantWords }) => {
         key={i}
         x1={p1.x} y1={p1.y}
         x2={p2.x} y2={p2.y}
-        stroke="#fff"
+        stroke="rgb(180, 220, 255)"
         strokeWidth="0.25"
         strokeDasharray="2.5 2"
-        opacity="0.35"
+        opacity="0.6"
       />
     ));
   };
@@ -567,7 +567,7 @@ const Constellation = ({ highlightedWords, relevantWords }) => {
         const isH = highlighted.has(node.id);
         const showAll = relevant.size === 0;
         const r = isH ? 1.3 : showLabels ? 0.6 : showAll ? 0.3 : 0.5;
-        const fill = isH ? "#fff" : showLabels ? "#777" : "#555";
+        const fill = isH ? "#fff" : showLabels ? "#a0a0a0" : "#808080";
         const { dx, dy, textAnchor } = getLabelProps(node);
 
         return (
@@ -575,7 +575,7 @@ const Constellation = ({ highlightedWords, relevantWords }) => {
             {isH && (
               <circle
                 cx={node.x} cy={node.y} r={5}
-                fill="none" stroke="#fff" strokeWidth="0.3" opacity="0.18"
+                fill="none" stroke="rgb(180, 220, 255)" strokeWidth="0.3" opacity="0.3"
               />
             )}
             <circle cx={node.x} cy={node.y} r={r} fill={fill} />
@@ -586,7 +586,7 @@ const Constellation = ({ highlightedWords, relevantWords }) => {
                 textAnchor={textAnchor}
                 fontSize="1.85"
                 fontFamily="DM Mono, monospace"
-                fill={isH ? "#fff" : "#777"}
+                fill={isH ? "#fff" : "#a0a0a0"}
                 fontWeight={isH ? "400" : "300"}
                 letterSpacing="0.03em"
               >
@@ -681,7 +681,7 @@ const AnimatedConstellation = ({ fullScreen = false }) => {
             <circle
               cx={nx} cy={ny}
               r={isGlow ? 4 : 1.5}
-              fill={isGlow ? "#fff" : "#777"}
+              fill={isGlow ? "#fff" : "#a0a0a0"}
               style={{ transition: "fill 0.35s ease" }}
             />
           </g>
@@ -717,7 +717,7 @@ const createShareCard = async (words, relevant, archetype, percentages, userName
     ctx.setLineDash([8, 6]);
     ctx.moveTo(PAD, yPos);
     ctx.lineTo(W - PAD, yPos);
-    ctx.strokeStyle = "#252525";
+    ctx.strokeStyle = "rgba(140, 200, 255, 0.2)";
     ctx.lineWidth = 1.5;
     ctx.stroke();
     ctx.setLineDash([]);
@@ -725,12 +725,12 @@ const createShareCard = async (words, relevant, archetype, percentages, userName
 
   // ── HEADER ROW ────────────────────────────────────────────────
   ctx.font = '300 29px "DM Mono", monospace';
-  ctx.fillStyle = "#666";
+  ctx.fillStyle = "#909090";
   ctx.textAlign = "left";
   ctx.fillText("TASTE PROFILE", PAD, y);
 
   const dateStr = new Date().toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" }).replace(/\//g, ".");
-  ctx.fillStyle = "#555";
+  ctx.fillStyle = "#808080";
   ctx.font = '300 27px "DM Mono", monospace';
   ctx.textAlign = "right";
   ctx.fillText(dateStr, W - PAD, y);
@@ -759,7 +759,7 @@ const createShareCard = async (words, relevant, archetype, percentages, userName
 
   // ── STYLE BREAKDOWN ───────────────────────────────────────────
   const firstName = (userName || "your").split(" ")[0].toLowerCase();
-  ctx.fillStyle = "#666";
+  ctx.fillStyle = "#909090";
   ctx.font = '300 29px "DM Mono", monospace';
   ctx.fillText(`${firstName}'s style is:`.toUpperCase(), PAD, y);
   y += 70;
@@ -773,7 +773,7 @@ const createShareCard = async (words, relevant, archetype, percentages, userName
     ctx.fillText(word.toUpperCase(), PAD, y);
 
     ctx.font = `300 ${pctSizes[i]}px "DM Mono", monospace`;
-    ctx.fillStyle = "#777";
+    ctx.fillStyle = "#a0a0a0";
     ctx.textAlign = "right";
     ctx.fillText(`${percentages?.[i] ?? [50, 30, 20][i]}%`, W - PAD, y);
     ctx.textAlign = "left";
@@ -806,7 +806,7 @@ const createShareCard = async (words, relevant, archetype, percentages, userName
       ctx.beginPath();
       ctx.moveTo(cx(p1.x), cy(p1.y));
       ctx.lineTo(cx(p2.x), cy(p2.y));
-      ctx.strokeStyle = "rgba(255,255,255,0.35)";
+      ctx.strokeStyle = "rgba(140, 200, 255, 0.6)";
       ctx.lineWidth = (0.25 / 100) * side;
       ctx.setLineDash([(2.5 / 100) * side, (2 / 100) * side]);
       ctx.stroke();
@@ -822,14 +822,14 @@ const createShareCard = async (words, relevant, archetype, percentages, userName
     if (isH) {
       ctx.beginPath();
       ctx.arc(nx, ny, (5 / 100) * side, 0, Math.PI * 2);
-      ctx.strokeStyle = "rgba(255,255,255,0.18)";
+      ctx.strokeStyle = "rgba(140, 200, 255, 0.3)";
       ctx.lineWidth = (0.3 / 100) * side;
       ctx.stroke();
     }
 
     ctx.beginPath();
     ctx.arc(nx, ny, (isH ? 1.3 : 0.6) / 100 * side, 0, Math.PI * 2);
-    ctx.fillStyle = isH ? "#fff" : "#777";
+    ctx.fillStyle = isH ? "#fff" : "#a0a0a0";
     ctx.fill();
 
     // Labels (matches SVG: fontSize 1.85, dx ±2.2, dy -2.2/-3.5/4)
@@ -838,7 +838,7 @@ const createShareCard = async (words, relevant, archetype, percentages, userName
     const onBot   = node.y > 88;
     const ldx = (onRight ? -2.2 : 2.2) / 100 * side;
     const ldy = (onTop ? 4 : onBot ? -3.5 : -2.2) / 100 * side;
-    ctx.fillStyle = isH ? "#fff" : "#777";
+    ctx.fillStyle = isH ? "#fff" : "#a0a0a0";
     ctx.font = `${isH ? "400" : "300"} ${Math.round((1.85 / 100) * side)}px "DM Mono", monospace`;
     ctx.textAlign = onRight ? "right" : "left";
     ctx.fillText(node.id, nx + ldx, ny + ldy);
@@ -1143,7 +1143,7 @@ export default function App() {
         background: "none",
         border: "none",
         cursor: "pointer",
-        color: "#aaa",
+        color: "#c8c8c8",
         fontSize: 20,
         padding: 0,
         lineHeight: 1,
@@ -1176,7 +1176,7 @@ export default function App() {
                 }}>
                   tastetest
                 </span>
-                <span style={{ fontSize: 9, letterSpacing: "0.18em", color: "#777", textTransform: "uppercase" }}>
+                <span style={{ fontSize: 9, letterSpacing: "0.18em", color: "#a0a0a0", textTransform: "uppercase" }}>
                   early access
                 </span>
               </nav>
@@ -1205,13 +1205,13 @@ export default function App() {
                   )}
                 </h1>
 
-                <p style={{ fontSize: 13, color: "#888", lineHeight: 1.8, marginBottom: 44, maxWidth: 480, letterSpacing: "0.02em", opacity: heroReady ? 1 : 0, animation: heroReady ? "fadeUp 0.55s cubic-bezier(0.16,1,0.3,1) 0s both" : "none" }}>
+                <p style={{ fontSize: 13, color: "#b0b0b0", lineHeight: 1.8, marginBottom: 44, maxWidth: 480, letterSpacing: "0.02em", opacity: heroReady ? 1 : 0, animation: heroReady ? "fadeUp 0.55s cubic-bezier(0.16,1,0.3,1) 0s both" : "none" }}>
                   what if you didn't have to spend hours digging through search results, social media posts, and brand websites to find a piece that fits your style?
                 </p>
                 <button onClick={() => setStep("upload")} style={{ ...btnStyle, opacity: heroReady ? 1 : 0, animation: heroReady ? "fadeUp 0.55s cubic-bezier(0.16,1,0.3,1) 0.18s both" : "none" }}>
                   take the taste test →
                 </button>
-                <p style={{ fontSize: 11, color: "#777", marginTop: 16, letterSpacing: "0.04em", lineHeight: 1.6, opacity: heroReady ? 1 : 0, animation: heroReady ? "fadeUp 0.55s cubic-bezier(0.16,1,0.3,1) 0.32s both" : "none" }}>
+                <p style={{ fontSize: 11, color: "#a0a0a0", marginTop: 16, letterSpacing: "0.04em", lineHeight: 1.6, opacity: heroReady ? 1 : 0, animation: heroReady ? "fadeUp 0.55s cubic-bezier(0.16,1,0.3,1) 0.32s both" : "none" }}>
                   take the test to get your taste profile today <br /> and to get early access when we launch
                 </p>
               </div>
@@ -1234,7 +1234,7 @@ export default function App() {
               }}>
                 unlock your results
               </h2>
-              <p style={{ fontSize: 13, color: "#888", lineHeight: 1.8, marginBottom: 40, maxWidth: 380, letterSpacing: "0.02em", textAlign: "center" }}>
+              <p style={{ fontSize: 13, color: "#b0b0b0", lineHeight: 1.8, marginBottom: 40, maxWidth: 380, letterSpacing: "0.02em", textAlign: "center" }}>
                 enter your info to reveal your taste profile
               </p>
               <form onSubmit={handleSignup} style={{ width: "100%", maxWidth: 400 }}>
@@ -1278,7 +1278,7 @@ export default function App() {
                         disabled={sendingCode}
                         style={{
                           background: "none",
-                          border: "1px solid #333",
+                          border: "1px solid rgba(140, 200, 255, 0.25)",
                           color: sendingCode ? "#555" : "#888",
                           fontSize: 11,
                           letterSpacing: "0.06em",
@@ -1320,13 +1320,13 @@ export default function App() {
                         </button>
                       </div>
                     )}
-                    {verifyError && <p style={{ fontSize: 11, color: "#999", marginTop: 8 }}>{verifyError}</p>}
+                    {verifyError && <p style={{ fontSize: 11, color: "#b0b0b0", marginTop: 8 }}>{verifyError}</p>}
                     {showCodeInput && (
                       <button
                         type="button"
                         onClick={sendVerificationCode}
                         disabled={sendingCode}
-                        style={{ background: "none", border: "none", color: "#555", fontSize: 10, letterSpacing: "0.04em", marginTop: 8, cursor: "pointer", padding: 0 }}
+                        style={{ background: "none", border: "none", color: "#808080", fontSize: 10, letterSpacing: "0.04em", marginTop: 8, cursor: "pointer", padding: 0 }}
                       >
                         resend code
                       </button>
@@ -1334,13 +1334,13 @@ export default function App() {
                   </div>
                 )}
                 {phoneVerified && (
-                  <p style={{ fontSize: 11, color: "#888", letterSpacing: "0.04em", marginBottom: 20 }}>phone verified ✓</p>
+                  <p style={{ fontSize: 11, color: "#b0b0b0", letterSpacing: "0.04em", marginBottom: 20 }}>phone verified ✓</p>
                 )}
-                {emailError && <p style={{ fontSize: 11, color: "#999", marginBottom: 12 }}>{emailError}</p>}
+                {emailError && <p style={{ fontSize: 11, color: "#b0b0b0", marginBottom: 12 }}>{emailError}</p>}
                 <button type="submit" disabled={!phoneVerified} style={{ ...btnStyle, width: "100%", textAlign: "center", opacity: phoneVerified ? 1 : 0.4, cursor: phoneVerified ? "pointer" : "default" }}>
                   reveal my taste →
                 </button>
-                <p style={{ fontSize: 10, color: "#555", letterSpacing: "0.03em", lineHeight: 1.7, marginTop: 12, textAlign: "center" }}>
+                <p style={{ fontSize: 10, color: "#808080", letterSpacing: "0.03em", lineHeight: 1.7, marginTop: 12, textAlign: "center" }}>
                   by continuing you agree to receive texts from us. reply STOP anytime.
                 </p>
               </form>
@@ -1363,7 +1363,7 @@ export default function App() {
               }}>
                 show us your style.
               </h2>
-              <p style={{ fontSize: 11, color: "#aaa", marginBottom: 36, letterSpacing: "0.04em", lineHeight: 1.6, textAlign: "center" }}>
+              <p style={{ fontSize: 11, color: "#c8c8c8", marginBottom: 36, letterSpacing: "0.04em", lineHeight: 1.6, textAlign: "center" }}>
                 upload 2–3 photos of your favorite outfits
               </p>
 
@@ -1376,7 +1376,7 @@ export default function App() {
                       <div
                         onClick={() => fileRefs[i].current?.click()}
                         style={{
-                          border: "1px dashed #2a2a2a",
+                          border: "1px dashed rgba(140, 200, 255, 0.25)",
                           cursor: "pointer",
                           overflow: "hidden",
                           aspectRatio: "3 / 4",
@@ -1395,10 +1395,10 @@ export default function App() {
                             style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
                           />
                         ) : (
-                          <span style={{ fontSize: 20, color: "#555", lineHeight: 1 }}>+</span>
+                          <span style={{ fontSize: 20, color: "#808080", lineHeight: 1 }}>+</span>
                         )}
                       </div>
-                      <p style={{ fontSize: 9, color: "#666", letterSpacing: "0.08em", textAlign: "center", textTransform: "uppercase" }}>
+                      <p style={{ fontSize: 9, color: "#909090", letterSpacing: "0.08em", textAlign: "center", textTransform: "uppercase" }}>
                         {i === 2 ? "optional" : "required"}
                       </p>
                       <input
@@ -1421,7 +1421,7 @@ export default function App() {
                   style={{ ...inputStyle, resize: "none", lineHeight: 1.7, paddingTop: 12, width: "100%", marginBottom: 4 }}
                 />
 
-                {error && <p style={{ fontSize: 11, color: "#999", marginTop: 10, alignSelf: "flex-start" }}>{error}</p>}
+                {error && <p style={{ fontSize: 11, color: "#b0b0b0", marginTop: 10, alignSelf: "flex-start" }}>{error}</p>}
                 <button type="submit" style={{ ...btnStyle, marginTop: 28, width: "100%", textAlign: "center" }}>
                   continue →
                 </button>
@@ -1432,7 +1432,7 @@ export default function App() {
           {/* ── QUESTIONS ────────────────────────────────────────────────── */}
           {step === "questions" && questionsLoading && (
             <div className="generating-layout fade-in">
-              <p style={{ fontSize: 11, letterSpacing: "0.14em", color: "#aaa", textTransform: "uppercase" }}>
+              <p style={{ fontSize: 11, letterSpacing: "0.14em", color: "#c8c8c8", textTransform: "uppercase" }}>
                 reading your style...
               </p>
               <div style={{ width: "100%", maxWidth: 560 }}>
@@ -1457,17 +1457,17 @@ export default function App() {
                   }}>
                     a few quick questions.
                   </h2>
-                  <p style={{ fontSize: 11, color: "#aaa", marginBottom: 44, letterSpacing: "0.04em", lineHeight: 1.6, textAlign: "center" }}>
+                  <p style={{ fontSize: 11, color: "#c8c8c8", marginBottom: 44, letterSpacing: "0.04em", lineHeight: 1.6, textAlign: "center" }}>
                     this or that — just go with your gut
                   </p>
 
                   <div style={{ width: "100%", maxWidth: 440, display: "flex", flexDirection: "column", gap: 32 }}>
                     {thisThatQuestions?.map((q, i) => (
                       <div key={i}>
-                        <p style={{ fontSize: 10, color: "#888", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>
+                        <p style={{ fontSize: 10, color: "#b0b0b0", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>
                           {i + 1} of {thisThatQuestions.length}
                         </p>
-                        <p style={{ fontSize: 13, color: "#ccc", marginBottom: 14, lineHeight: 1.6, letterSpacing: "0.01em" }}>
+                        <p style={{ fontSize: 13, color: "#e0e0e0", marginBottom: 14, lineHeight: 1.6, letterSpacing: "0.01em" }}>
                           at <em style={{ color: "#fff" }}>{q.situation}</em>...
                         </p>
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
@@ -1480,8 +1480,8 @@ export default function App() {
                                 onClick={() => handleAnswer(i, opt)}
                                 style={{
                                   background: selected ? "#fff" : "transparent",
-                                  color: selected ? "#0a0a0a" : "#888",
-                                  border: selected ? "1px solid #fff" : "1px solid #2a2a2a",
+                                  color: selected ? "#0a0a0a" : "#b0b0b0",
+                                  border: selected ? "1px solid #fff" : "1px solid rgba(140, 200, 255, 0.25)",
                                   padding: "14px 12px",
                                   fontSize: 11,
                                   letterSpacing: "0.02em",
@@ -1501,10 +1501,10 @@ export default function App() {
 
                     {/* Looking for question */}
                     <div>
-                      <p style={{ fontSize: 10, color: "#888", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>
+                      <p style={{ fontSize: 10, color: "#b0b0b0", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>
                         one more
                       </p>
-                      <p style={{ fontSize: 13, color: "#ccc", marginBottom: 14, lineHeight: 1.6, letterSpacing: "0.01em" }}>
+                      <p style={{ fontSize: 13, color: "#e0e0e0", marginBottom: 14, lineHeight: 1.6, letterSpacing: "0.01em" }}>
                         what's one thing you're trying to find right now?
                       </p>
                       <input
@@ -1516,7 +1516,7 @@ export default function App() {
                       />
                     </div>
 
-                    {error && <p style={{ fontSize: 11, color: "#999" }}>{error}</p>}
+                    {error && <p style={{ fontSize: 11, color: "#b0b0b0" }}>{error}</p>}
                     <button
                       onClick={handleQuestionsNext}
                       style={{ ...btnStyle, width: "100%", textAlign: "center", marginTop: 8 }}
@@ -1530,7 +1530,7 @@ export default function App() {
           {/* ── GENERATING ───────────────────────────────────────────────── */}
           {step === "generating" && (
             <div className="generating-layout fade-in">
-              <p style={{ fontSize: 11, letterSpacing: "0.14em", color: "#aaa", textTransform: "uppercase" }}>
+              <p style={{ fontSize: 11, letterSpacing: "0.14em", color: "#c8c8c8", textTransform: "uppercase" }}>
                 mapping your taste...
               </p>
               <div style={{ width: "100%", maxWidth: 560 }}>
@@ -1549,7 +1549,7 @@ export default function App() {
                 fontSize: "clamp(11px, 1.4vw, 13px)",
                 letterSpacing: "0.12em",
                 textTransform: "uppercase",
-                color: "#aaa",
+                color: "#c8c8c8",
                 marginBottom: subtitle ? 10 : 36,
                 textAlign: "center",
               }}>
@@ -1559,7 +1559,7 @@ export default function App() {
                 <p style={{
                   fontFamily: "'DM Mono', monospace",
                   fontSize: "clamp(11px, 1.3vw, 13px)",
-                  color: "#888",
+                  color: "#b0b0b0",
                   textAlign: "center",
                   maxWidth: 320,
                   lineHeight: 1.6,
@@ -1589,12 +1589,12 @@ export default function App() {
               }}>
                 {/* Receipt header */}
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
-                  <span style={{ fontSize: 7.5, color: "#666", letterSpacing: "0.12em", textTransform: "uppercase" }}>taste profile</span>
-                  <span style={{ fontSize: 7, color: "#555", letterSpacing: "0.06em" }}>
+                  <span style={{ fontSize: 7.5, color: "#909090", letterSpacing: "0.12em", textTransform: "uppercase" }}>taste profile</span>
+                  <span style={{ fontSize: 7, color: "#808080", letterSpacing: "0.06em" }}>
                     {new Date().toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" }).replace(/\//g, ".")}
                   </span>
                 </div>
-                <div style={{ borderTop: "1px dashed #252525", marginBottom: 12 }} />
+                <div style={{ borderTop: "1px dashed rgba(140, 200, 255, 0.2)", marginBottom: 12 }} />
 
                 {/* Archetype */}
                 <span style={{
@@ -1609,10 +1609,10 @@ export default function App() {
                 }}>
                   {archetype}
                 </span>
-                <div style={{ borderTop: "1px dashed #252525", marginBottom: 10 }} />
+                <div style={{ borderTop: "1px dashed rgba(140, 200, 255, 0.2)", marginBottom: 10 }} />
 
                 {/* Style breakdown */}
-                <p style={{ fontSize: 7.5, color: "#666", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>
+                <p style={{ fontSize: 7.5, color: "#909090", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>
                   {name.split(" ")[0].toLowerCase()}'s style is:
                 </p>
                 {styleWords.map((word, i) => (
@@ -1625,12 +1625,12 @@ export default function App() {
                     <span style={{ fontSize: [13, 11, 9.5][i], color: "#fff", letterSpacing: "0.08em", textTransform: "uppercase" }}>
                       {word}
                     </span>
-                    <span style={{ fontSize: [11, 9.5, 8.5][i], color: "#777", letterSpacing: "0.06em" }}>
+                    <span style={{ fontSize: [11, 9.5, 8.5][i], color: "#a0a0a0", letterSpacing: "0.06em" }}>
                       {stylePercentages[i]}%
                     </span>
                   </div>
                 ))}
-                <div style={{ borderTop: "1px dashed #252525", marginTop: 10, marginBottom: 8 }} />
+                <div style={{ borderTop: "1px dashed rgba(140, 200, 255, 0.2)", marginTop: 10, marginBottom: 8 }} />
 
                 {/* Constellation */}
                 <div style={{ flex: 1, minHeight: 0 }}>
