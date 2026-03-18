@@ -1072,6 +1072,27 @@ export default function App() {
       if (err) console.error("Supabase submissions error:", err.message);
     }
 
+    // TODO: Re-enable once Twilio A2P 10DLC registration is approved
+    // try {
+    //   const smsRes = await fetch("/api/send-profile-sms", {
+    //     method: "POST",
+    //     headers: { "Content-Type": "application/json" },
+    //     body: JSON.stringify({
+    //       phone: formatPhoneE164(phone.trim()),
+    //       archetype: finalArchetype,
+    //       name: name.trim(),
+    //     }),
+    //   });
+    //   const smsData = await smsRes.json().catch(() => ({}));
+    //   if (!smsRes.ok) {
+    //     console.error("SMS send failed:", smsData.error || smsRes.status);
+    //   } else {
+    //     console.log("SMS sent successfully:", smsData);
+    //   }
+    // } catch (err) {
+    //   console.error("SMS send error:", err.message);
+    // }
+
     setStep("results");
   };
 
