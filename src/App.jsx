@@ -1051,8 +1051,7 @@ export default function App() {
       const formatQuestion = (q) =>
         `at ${q.situation}... ${q.optionA} OR ${q.optionB}`;
 
-      const { error: err } = await supabase.from("submissions").insert({
-        id: submissionId,
+      const submissionData = {
         name: name.trim(),
         email: email.trim(),
         phone: phone.trim() || null,
@@ -1068,7 +1067,37 @@ export default function App() {
         looking_for: lookingFor.trim() || null,
         photo_urls: photoUrls.length > 0 ? photoUrls : null,
         sms_optin: true,
-      });
+      };
+
+      const phoneValue = phone.trim() || null;
+      let err;
+      if (phoneValue) {
+        const { data: existing } = await supabase
+          .from("submissions")
+          .select("id")
+          .eq("phone", phoneValue)
+          .maybeSingle();
+        if (existing) {
+          const nonNullData = Object.fromEntries(
+            Object.entries(submissionData).filter(([, v]) => v !== null && v !== undefined)
+          );
+          const { error: updateErr } = await supabase
+            .from("submissions")
+            .update(nonNullData)
+            .eq("phone", phoneValue);
+          err = updateErr;
+        } else {
+          const { error: insertErr } = await supabase
+            .from("submissions")
+            .insert({ id: submissionId, ...submissionData });
+          err = insertErr;
+        }
+      } else {
+        const { error: insertErr } = await supabase
+          .from("submissions")
+          .insert({ id: submissionId, ...submissionData });
+        err = insertErr;
+      }
       if (err) console.error("Supabase submissions error:", err.message);
     }
 
