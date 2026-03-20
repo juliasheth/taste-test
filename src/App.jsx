@@ -887,6 +887,17 @@ export default function App() {
   const [signupId, setSignupId]                   = useState(null);
   const [typed, setTyped]                         = useState("");
   const [heroReady, setHeroReady]                 = useState(false);
+  const [waitlistName, setWaitlistName]           = useState("");
+  const [waitlistPhone, setWaitlistPhone]         = useState("");
+  const [waitlistPhoneVerified, setWaitlistPhoneVerified] = useState(false);
+  const [waitlistShowCode, setWaitlistShowCode]   = useState(false);
+  const [waitlistCode, setWaitlistCode]           = useState("");
+  const [waitlistVerifyError, setWaitlistVerifyError] = useState("");
+  const [waitlistSendingCode, setWaitlistSendingCode] = useState(false);
+  const [waitlistVerifyingCode, setWaitlistVerifyingCode] = useState(false);
+  const [waitlistSubmitting, setWaitlistSubmitting] = useState(false);
+  const [waitlistDone, setWaitlistDone]           = useState(false);
+  const [waitlistError, setWaitlistError]         = useState("");
 
   const fileRef0 = useRef(null);
   const fileRef1 = useRef(null);
@@ -924,6 +935,83 @@ export default function App() {
       // user cancelled or share failed — no-op
     } finally {
       setSharing(false);
+    }
+  };
+
+  const sendWaitlistCode = async () => {
+    setWaitlistVerifyError("");
+    if (!waitlistPhone.trim()) { setWaitlistVerifyError("please enter your phone number"); return; }
+    if (!/^\+?[\d\s\-().]{7,15}$/.test(waitlistPhone.trim())) { setWaitlistVerifyError("please enter a valid phone number"); return; }
+    setWaitlistSendingCode(true);
+    try {
+      const res = await fetch("/api/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: formatPhoneE164(waitlistPhone.trim()) }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setWaitlistShowCode(true);
+      } else {
+        setWaitlistVerifyError(data.error || "failed to send code");
+      }
+    } catch {
+      setWaitlistVerifyError("failed to send code");
+    }
+    setWaitlistSendingCode(false);
+  };
+
+  const verifyWaitlistCode = async () => {
+    setWaitlistVerifyError("");
+    setWaitlistVerifyingCode(true);
+    try {
+      const res = await fetch("/api/verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: formatPhoneE164(waitlistPhone.trim()), code: waitlistCode }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setWaitlistPhoneVerified(true);
+        setWaitlistShowCode(false);
+        setWaitlistCode("");
+      } else {
+        setWaitlistVerifyError(data.error || "invalid code");
+      }
+    } catch {
+      setWaitlistVerifyError("verification failed");
+    }
+    setWaitlistVerifyingCode(false);
+  };
+
+  const handleWaitlist = async (e) => {
+    e.preventDefault();
+    if (!waitlistName.trim()) { setWaitlistError("please enter your name"); return; }
+    if (!waitlistPhone.trim()) { setWaitlistError("please enter your phone number"); return; }
+    if (!waitlistPhoneVerified) { setWaitlistError("please verify your phone number"); return; }
+    setWaitlistSubmitting(true);
+    setWaitlistError("");
+    try {
+      if (supabase) {
+        const phoneValue = formatPhoneE164(waitlistPhone.trim());
+        const { data: existing } = await supabase
+          .from("submissions")
+          .select("id")
+          .eq("phone", phoneValue)
+          .maybeSingle();
+        if (!existing) {
+          await supabase.from("submissions").insert({
+            id: crypto.randomUUID(),
+            name: waitlistName.trim(),
+            phone: phoneValue,
+          });
+        }
+      }
+      setWaitlistDone(true);
+    } catch {
+      setWaitlistError("something went wrong — please try again");
+    } finally {
+      setWaitlistSubmitting(false);
     }
   };
 
@@ -1235,15 +1323,165 @@ export default function App() {
                 </h1>
 
                 <p style={{ fontSize: 13, color: "#b0b0b0", lineHeight: 1.8, marginBottom: 44, maxWidth: 480, letterSpacing: "0.02em", opacity: heroReady ? 1 : 0, animation: heroReady ? "fadeUp 0.55s cubic-bezier(0.16,1,0.3,1) 0s both" : "none" }}>
-                  what if you didn't have to spend hours digging through search results, social media posts, and brand websites to find a piece that fits your style?
+                   we learn your taste so that every online shopping experience is tailored to you
                 </p>
                 <button onClick={() => setStep("upload")} style={{ ...btnStyle, opacity: heroReady ? 1 : 0, animation: heroReady ? "fadeUp 0.55s cubic-bezier(0.16,1,0.3,1) 0.18s both" : "none" }}>
                   take the taste test →
                 </button>
-                <p style={{ fontSize: 11, color: "#a0a0a0", marginTop: 16, letterSpacing: "0.04em", lineHeight: 1.6, opacity: heroReady ? 1 : 0, animation: heroReady ? "fadeUp 0.55s cubic-bezier(0.16,1,0.3,1) 0.32s both" : "none" }}>
-                  take the test to get your taste profile today <br /> and to get early access when we launch
+                <p style={{ fontSize: 12, color: "#b0b0b0", marginTop: 16, letterSpacing: "0.05em", opacity: heroReady ? 1 : 0, animation: heroReady ? "fadeUp 0.55s cubic-bezier(0.16,1,0.3,1) 0.32s both" : "none" }}>
+                  get your taste profile today
                 </p>
+                <button onClick={() => setStep("waitlist")} style={{ ...ghostBtnStyle, marginTop: 32, fontSize: 10, letterSpacing: "0.08em", padding: "10px 20px", opacity: heroReady ? 1 : 0, animation: heroReady ? "fadeUp 0.55s cubic-bezier(0.16,1,0.3,1) 0.42s both" : "none" }}>
+                  not ready yet? save your spot →
+                </button>
               </div>
+            </div>
+          )}
+
+          {/* ── WAITLIST ─────────────────────────────────────────────────── */}
+          {step === "waitlist" && (
+            <div className="fade-up" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "72px 0 88px", minHeight: "calc(100vh - 82px)", position: "relative" }}>
+              {backBtn("home")}
+              {!waitlistDone ? (
+                <>
+                  <h2 style={{
+                    fontFamily: "'Playfair Display', serif",
+                    fontStyle: "italic",
+                    fontWeight: 400,
+                    fontSize: "clamp(28px, 4vw, 42px)",
+                    lineHeight: 1.2,
+                    marginBottom: 10,
+                    letterSpacing: "-0.01em",
+                    textAlign: "center",
+                  }}>
+                    save your spot.
+                  </h2>
+                  <p style={{ fontSize: 12, color: "#b0b0b0", marginBottom: 8, letterSpacing: "0.03em", lineHeight: 1.8, textAlign: "center", maxWidth: 360 }}>
+                    no rush — come back whenever you're ready.
+                  </p>
+                  <p style={{ fontSize: 12, color: "#888", marginBottom: 36, letterSpacing: "0.03em", lineHeight: 1.8, textAlign: "center", maxWidth: 360 }}>
+                    leave your info and we'll be here waiting when you are.
+                  </p>
+                  <form onSubmit={handleWaitlist} style={{ width: "100%", maxWidth: 400 }}>
+                    <div style={{ marginBottom: 14 }}>
+                      <input
+                        type="text"
+                        placeholder="your name"
+                        value={waitlistName}
+                        onChange={e => { setWaitlistName(e.target.value); setWaitlistError(""); }}
+                        style={inputStyle}
+                        autoComplete="name"
+                      />
+                    </div>
+                    <div style={{ marginBottom: 8 }}>
+                      <input
+                        type="tel"
+                        placeholder="your phone number"
+                        value={waitlistPhone}
+                        onChange={e => { setWaitlistPhone(e.target.value); setWaitlistPhoneVerified(false); setWaitlistShowCode(false); setWaitlistVerifyError(""); }}
+                        style={inputStyle}
+                        autoComplete="tel"
+                        disabled={waitlistPhoneVerified}
+                      />
+                    </div>
+                    {!waitlistPhoneVerified && (
+                      <div style={{ marginBottom: 20 }}>
+                        {!waitlistShowCode ? (
+                          <button
+                            type="button"
+                            onClick={sendWaitlistCode}
+                            disabled={waitlistSendingCode}
+                            style={{
+                              background: "none",
+                              border: "1px solid rgba(140, 200, 255, 0.25)",
+                              color: waitlistSendingCode ? "#555" : "#888",
+                              fontSize: 11,
+                              letterSpacing: "0.06em",
+                              padding: "10px 16px",
+                              cursor: waitlistSendingCode ? "default" : "pointer",
+                              width: "100%",
+                            }}
+                          >
+                            {waitlistSendingCode ? "sending..." : "send verification code"}
+                          </button>
+                        ) : (
+                          <div style={{ display: "flex", gap: 8 }}>
+                            <input
+                              type="text"
+                              inputMode="numeric"
+                              maxLength={6}
+                              placeholder="6-digit code"
+                              value={waitlistCode}
+                              onChange={e => setWaitlistCode(e.target.value)}
+                              style={{ ...inputStyle, flex: 1, marginBottom: 0 }}
+                            />
+                            <button
+                              type="button"
+                              onClick={verifyWaitlistCode}
+                              disabled={waitlistVerifyingCode}
+                              style={{
+                                background: "#fff",
+                                border: "none",
+                                color: "#0a0a0a",
+                                fontSize: 11,
+                                letterSpacing: "0.06em",
+                                padding: "10px 16px",
+                                cursor: waitlistVerifyingCode ? "default" : "pointer",
+                                whiteSpace: "nowrap",
+                                opacity: waitlistVerifyingCode ? 0.5 : 1,
+                              }}
+                            >
+                              {waitlistVerifyingCode ? "verifying..." : "verify"}
+                            </button>
+                          </div>
+                        )}
+                        {waitlistVerifyError && <p style={{ fontSize: 11, color: "#b0b0b0", marginTop: 8 }}>{waitlistVerifyError}</p>}
+                        {waitlistShowCode && (
+                          <button
+                            type="button"
+                            onClick={sendWaitlistCode}
+                            disabled={waitlistSendingCode}
+                            style={{ background: "none", border: "none", color: "#808080", fontSize: 10, letterSpacing: "0.04em", marginTop: 8, cursor: "pointer", padding: 0 }}
+                          >
+                            resend code
+                          </button>
+                        )}
+                      </div>
+                    )}
+                    {waitlistPhoneVerified && (
+                      <p style={{ fontSize: 11, color: "#b0b0b0", letterSpacing: "0.04em", marginBottom: 20 }}>phone verified ✓</p>
+                    )}
+                    {waitlistError && <p style={{ fontSize: 11, color: "#b0b0b0", marginBottom: 12 }}>{waitlistError}</p>}
+                    <button type="submit" disabled={!waitlistPhoneVerified || waitlistSubmitting} style={{ ...btnStyle, width: "100%", textAlign: "center", opacity: waitlistPhoneVerified && !waitlistSubmitting ? 1 : 0.4, cursor: waitlistPhoneVerified && !waitlistSubmitting ? "pointer" : "default" }}>
+                      {waitlistSubmitting ? "saving..." : "save my spot →"}
+                    </button>
+                    <p style={{ fontSize: 10, color: "#808080", letterSpacing: "0.03em", lineHeight: 1.7, marginTop: 12, textAlign: "center" }}>
+                      by continuing you agree to receive texts from us. reply STOP anytime.
+                    </p>
+                  </form>
+                </>
+              ) : (
+                <>
+                  <h2 style={{
+                    fontFamily: "'Playfair Display', serif",
+                    fontStyle: "italic",
+                    fontWeight: 400,
+                    fontSize: "clamp(28px, 4vw, 42px)",
+                    lineHeight: 1.2,
+                    marginBottom: 16,
+                    letterSpacing: "-0.01em",
+                    textAlign: "center",
+                  }}>
+                    you're on the list.
+                  </h2>
+                  <p style={{ fontSize: 12, color: "#b0b0b0", marginBottom: 36, letterSpacing: "0.03em", lineHeight: 1.8, textAlign: "center", maxWidth: 360 }}>
+                    we'll be here whenever you're ready to take the test.
+                  </p>
+                  <button onClick={() => setStep("home")} style={{ ...ghostBtnStyle, fontSize: 10, letterSpacing: "0.08em", padding: "10px 20px" }}>
+                    back to home
+                  </button>
+                </>
+              )}
             </div>
           )}
 
