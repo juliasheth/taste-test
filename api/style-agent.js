@@ -149,6 +149,20 @@ async function buildClaudeMessages(history) {
   return messages;
 }
 
+// ─── TWIML RESPONSE HELPERS ──────────────────────────────────────────────────
+
+function twimlMessage(res, text) {
+  res.setHeader("Content-Type", "text/xml");
+  res.status(200).send(
+    `<?xml version="1.0" encoding="UTF-8"?><Response><Message>${text}</Message></Response>`
+  );
+}
+
+function twimlEmpty(res) {
+  res.setHeader("Content-Type", "text/xml");
+  res.status(200).send(`<?xml version="1.0" encoding="UTF-8"?><Response></Response>`);
+}
+
 // ─── MAIN HANDLER ────────────────────────────────────────────────────────────
 
 export default async function handler(req, res) {
@@ -166,10 +180,6 @@ export default async function handler(req, res) {
   const phone = req.body.From;
   const messageBody = req.body.Body || "";
   const numMedia = parseInt(req.body.NumMedia || "0");
-
-  // Respond to Twilio immediately — it requires a response within 15 seconds.
-  // The function continues executing after this line.
-  res.status(200).send("<Response></Response>");
 
   try {
     // 1. Download any photos and store in Supabase Storage
@@ -239,18 +249,10 @@ export default async function handler(req, res) {
       .update({ status: "waiting_for_user", updated_at: new Date().toISOString() })
       .eq("id", conversation.id);
 
-    // 9. Send the reply
-    await twilioClient.messages.create({
-      body: assistantText,
-      from: process.env.TWILIO_PHONE_NUMBER,
-      to: phone,
-    });
+    // 9. Respond to Twilio with the reply — TwiML delivers it directly
+    twimlMessage(res, assistantText);
   } catch (err) {
     console.error("Style agent error:", err);
-    await twilioClient.messages.create({
-      body: "sorry, something went wrong on my end. try again in a moment!",
-      from: process.env.TWILIO_PHONE_NUMBER,
-      to: phone,
-    }).catch(() => {});
+    twimlMessage(res, "sorry, something went wrong on my end. try again in a moment!");
   }
 }
