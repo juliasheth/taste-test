@@ -887,6 +887,7 @@ export default function App() {
   const [signupId, setSignupId]                   = useState(null);
   const [typed, setTyped]                         = useState("");
   const [heroReady, setHeroReady]                 = useState(false);
+  const [submitting, setSubmitting]               = useState(false);
   const [waitlistName, setWaitlistName]           = useState("");
   const [waitlistPhone, setWaitlistPhone]         = useState("");
   const [waitlistPhoneVerified, setWaitlistPhoneVerified] = useState(false);
@@ -1096,8 +1097,11 @@ export default function App() {
     if (!phone.trim()) { setEmailError("please enter your phone number"); return; }
     if (!/^\+?[\d\s\-().]{7,15}$/.test(phone.trim())) { setEmailError("please enter a valid phone number"); return; }
     if (!phoneVerified) { setEmailError("please verify your phone number"); return; }
+    if (submitting) return;
+    setSubmitting(true);
     setSmsOptin(true);
     setEmailError("");
+    try {
 
     const submissionId = crypto.randomUUID();
     setSignupId(submissionId);
@@ -1210,7 +1214,23 @@ export default function App() {
     //   console.error("SMS send error:", err.message);
     // }
 
-    setStep("results");
+      setStep("results");
+    } catch (err) {
+      console.error("handleSignup error:", err);
+      if (supabase) {
+        supabase.from("errors").insert({
+          error_message: err?.message || String(err),
+          error_stack: err?.stack || null,
+          step: "signup",
+          phone: phone.trim() || null,
+          user_agent: navigator.userAgent,
+        }).then(({ error: logErr }) => { if (logErr) console.error("failed to log error:", logErr.message); });
+      }
+      setEmailError("something went wrong — please try again");
+      setStep("signup");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleUpload = async (e) => {
@@ -1604,8 +1624,8 @@ export default function App() {
                   <p style={{ fontSize: 11, color: "#b0b0b0", letterSpacing: "0.04em", marginBottom: 20 }}>phone verified ✓</p>
                 )}
                 {emailError && <p style={{ fontSize: 11, color: "#b0b0b0", marginBottom: 12 }}>{emailError}</p>}
-                <button type="submit" disabled={!phoneVerified} style={{ ...btnStyle, width: "100%", textAlign: "center", opacity: phoneVerified ? 1 : 0.4, cursor: phoneVerified ? "pointer" : "default" }}>
-                  reveal my taste →
+                <button type="submit" disabled={!phoneVerified || submitting} style={{ ...btnStyle, width: "100%", textAlign: "center", opacity: (phoneVerified && !submitting) ? 1 : 0.4, cursor: (phoneVerified && !submitting) ? "pointer" : "default" }}>
+                  {submitting ? "submitting..." : "reveal my taste →"}
                 </button>
                 <p style={{ fontSize: 10, color: "#808080", letterSpacing: "0.03em", lineHeight: 1.7, marginTop: 12, textAlign: "center" }}>
                   by continuing you agree to receive texts from us. reply STOP anytime.
