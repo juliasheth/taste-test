@@ -1713,6 +1713,16 @@ export default function App() {
                 <button type="submit" style={{ ...btnStyle, marginTop: 28, width: "100%", textAlign: "center" }}>
                   continue →
                 </button>
+                <p style={{ fontSize: 11, color: "#808080", marginTop: 20, letterSpacing: "0.03em", textAlign: "center" }}>
+                  not ready?{" "}
+                  <button
+                    type="button"
+                    onClick={() => setStep("waitlist")}
+                    style={{ background: "none", border: "none", padding: 0, color: "#c8c8c8", fontSize: 11, letterSpacing: "0.03em", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}
+                  >
+                    join the waitlist
+                  </button>
+                </p>
               </form>
             </div>
           )}
