@@ -1130,6 +1130,9 @@ export default function App() {
         email: email.trim().toLowerCase(),
         phone: phone.trim() || null,
         description: description.trim() || null,
+        wearing_today: wearingToday.trim() || null,
+        favorite_outfit: favoriteOutfit.trim() || null,
+        brands: brands.trim() || null,
         question_1: thisThatQuestions?.[0] ? formatQuestion(thisThatQuestions[0]) : null,
         answer_1: thisThatAnswers[0] === "A" ? thisThatQuestions?.[0]?.optionA : thisThatQuestions?.[0]?.optionB,
         question_2: thisThatQuestions?.[1] ? formatQuestion(thisThatQuestions[1]) : null,
@@ -1534,11 +1537,42 @@ export default function App() {
                             }}
                           >
                             {photoPreviews[i] ? (
-                              <img
-                                src={photoPreviews[i]}
-                                alt={`outfit ${i + 1}`}
-                                style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-                              />
+                              <>
+                                <img
+                                  src={photoPreviews[i]}
+                                  alt={`outfit ${i + 1}`}
+                                  style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                                />
+                                <button
+                                  type="button"
+                                  onClick={e => {
+                                    e.stopPropagation();
+                                    setPhotoPreviews(prev => { const next = [...prev]; next[i] = null; return next; });
+                                    setPhotos(prev => { const next = [...prev]; next[i] = null; return next; });
+                                    if (fileRefs[i].current) fileRefs[i].current.value = "";
+                                  }}
+                                  style={{
+                                    position: "absolute",
+                                    top: 6,
+                                    right: 6,
+                                    width: 20,
+                                    height: 20,
+                                    borderRadius: "50%",
+                                    background: "rgba(0,0,0,0.55)",
+                                    border: "none",
+                                    color: "#fff",
+                                    fontSize: 12,
+                                    lineHeight: 1,
+                                    cursor: "pointer",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    padding: 0,
+                                  }}
+                                >
+                                  ×
+                                </button>
+                              </>
                             ) : (
                               <span style={{ fontSize: 20, color: "#808080", lineHeight: 1 }}>+</span>
                             )}
