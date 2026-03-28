@@ -358,35 +358,72 @@ const getDefaultRelevant = (words) => {
 };
 
 // ─── CLAUDE: GENERATE THIS-OR-THAT QUESTIONS ─────────────────────────────────
-const generateThisThatQuestions = async (photos, description) => {
+const generateThisThatQuestions = async (photos, description, textInputs = null) => {
   const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
   if (!apiKey) return null;
 
+  const useTextPath = textInputs !== null;
   const content = [];
-  for (const photo of photos) {
-    if (photo) {
-      content.push({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: photo } });
+
+  if (!useTextPath) {
+    for (const photo of photos) {
+      if (photo) {
+        content.push({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: photo } });
+      }
     }
+    const textPrompt = description
+      ? `Here are my outfit photos. Style notes: "${description}". Generate 3 this-or-that questions based on my style.`
+      : "Here are my outfit photos. Generate 3 this-or-that questions based on my style.";
+    content.push({ type: "text", text: textPrompt });
+  } else {
+    const lines = [
+      "I don't have outfit photos, but here's my style in words:",
+      "",
+      `What I'm wearing today: '${textInputs.wearingToday}'`,
+      `My favorite outfit I've worn recently: '${textInputs.favoriteOutfit}'`,
+      `Brands I love: '${textInputs.brands}'`,
+    ];
+    if (textInputs.description) lines.push(`Anything else about my style: '${textInputs.description}'`);
+    lines.push("", "Generate 3 this-or-that questions based on my style.");
+    content.push({ type: "text", text: lines.join("\n") });
   }
-  const textPrompt = description
-    ? `Here are my outfit photos. Style notes: "${description}". Generate 3 this-or-that questions based on my style.`
-    : "Here are my outfit photos. Generate 3 this-or-that questions based on my style.";
-  content.push({ type: "text", text: textPrompt });
 
-  const system = `You are a style analyst. Based on the user's outfit photos, generate 3 "this or that" style questions to map their taste.
+  const system = useTextPath
+    ? `You are a sharp, intuitive stylist with a great eye and an even better instinct for how people actually dress. Your job is to figure out someone's real aesthetic — not what they aspire to, but how they actually move through the world.
 
-Each question names a specific real-world situation and presents two contrasting outfit options (A and B). The options should reflect genuinely different aesthetics — different silhouettes, fabrics, and moods — inspired by what you can observe from their photos.
+Based on the user's style description, generate 3 'this or that' style questions to help map their taste. Each question names a specific real-world situation and presents two contrasting outfit options (A and B).
 
-Keep outfit descriptions concise but specific: mention 2-3 key pieces or details (e.g. "oversized vintage blazer, straight-leg jeans, white sneakers" vs "fitted silk top, tailored trousers, kitten heels").
+Rules:
+- The three situations must be clearly distinct from each other — no two should feel like variations of the same vibe (e.g. don't use two going-out scenarios)
+- Situations should feel like real moments from this person's life, not generic fashion prompts
+- Describe each outfit option the way a stylish friend would in a text message — specific enough to picture it, but easy to read. Mention 2-3 key pieces or details. No stiff product-listing language.
+- The two options within each question should represent genuinely different aesthetic directions — not just casual vs. dressy, but different points of view
+- Read between the lines of what they've told you — the brands they love, what they actually wore today vs. their favorite outfit, any gap between those two things is signal
+- If their "wearing today" and "favorite outfit" descriptions feel different from each other, use that tension to probe which direction is more them
 
-The three situations MUST be clearly distinct from each other — vary the type of event (e.g. social outing, formal occasion, casual errand), the season or weather (e.g. summer heat, cold winter day, transitional fall), and the energy level (e.g. low-key vs. dressed up). Do not generate three situations that are all similar in vibe or formality. For example, do NOT use three casual daytime outings — mix it up with something like a hot summer errand run, a winter dinner party, and a night out.
+Return a JSON array of exactly 3 objects, each with:
+- "situation": a short, specific scenario (e.g. "Sunday farmers market with your person")
+- "optionA": outfit description
+- "optionB": outfit description
 
-Return ONLY valid JSON in this exact format, no other text:
-{"questions":[
-  {"situation":"...","optionA":"...","optionB":"..."},
-  {"situation":"...","optionA":"...","optionB":"..."},
-  {"situation":"...","optionA":"...","optionB":"..."}
-]}`;
+Return only valid JSON. No extra text.`
+    : `You are a sharp, intuitive stylist with a great eye and an even better instinct for how people actually dress. Your job is to figure out someone's real aesthetic — not what they aspire to, but how they actually move through the world.
+
+Based on the user's outfit photos, generate 3 'this or that' style questions to help map their taste. Each question names a specific real-world situation and presents two contrasting outfit options (A and B).
+
+Rules:
+- The three situations must be clearly distinct from each other — no two should feel like variations of the same vibe (e.g. don't use two going-out scenarios)
+- Situations should feel like real moments from this person's life, not generic fashion prompts
+- Describe each outfit option the way a stylish friend would in a text message — specific enough to picture it, but easy to read. Mention 2-3 key pieces or details. No stiff product-listing language.
+- The two options within each question should represent genuinely different aesthetic directions — not just casual vs. dressy, but different points of view
+- Don't mirror the photos back at them — use the photos as a signal to probe the edges of their taste
+
+Return a JSON array of exactly 3 objects, each with:
+- "situation": a short, specific scenario (e.g. "Sunday farmers market with your person")
+- "optionA": outfit description
+- "optionB": outfit description
+
+Return only valid JSON. No extra text.`;
 
   try {
     const res = await fetch("https://api.anthropic.com/v1/messages", {
@@ -406,60 +443,103 @@ Return ONLY valid JSON in this exact format, no other text:
     });
     if (!res.ok) return null;
     const data = await res.json();
-    const match = data.content[0].text.match(/\{[\s\S]*\}/);
+    const match = data.content[0].text.match(/(\[[\s\S]*\]|\{[\s\S]*\})/);
     if (!match) return null;
     const parsed = JSON.parse(match[0]);
-    if (!Array.isArray(parsed.questions) || parsed.questions.length !== 3) return null;
-    return parsed.questions;
+    const questions = Array.isArray(parsed) ? parsed : parsed.questions;
+    if (!Array.isArray(questions) || questions.length !== 3) return null;
+    return questions;
   } catch {
     return null;
   }
 };
 
 // ─── CLAUDE: GENERATE STYLE WORDS ────────────────────────────────────────────
-const generateStyleWords = async (photos, description, thisThatQuestions, thisThatAnswers, lookingFor) => {
+const generateStyleWords = async (photos, description, thisThatQuestions, thisThatAnswers, lookingFor, textInputs = null) => {
   const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
   if (!apiKey) return null;
 
+  const useTextPath = textInputs !== null;
   const content = [];
-  for (const photo of photos) {
-    if (photo) {
-      content.push({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: photo } });
-    }
-  }
 
-  let contextText = "";
-  if (description) contextText += `Style notes: ${description}\n\n`;
+  let choicesText = "";
   if (thisThatQuestions && thisThatAnswers) {
-    contextText += "This-or-that answers:\n";
     thisThatQuestions.forEach((q, i) => {
       const answer = thisThatAnswers[i];
       if (answer) {
         const chosen = answer === "A" ? q.optionA : q.optionB;
-        contextText += `- In "${q.situation}": chose "${chosen}"\n`;
+        choicesText += `- In "${q.situation}": chose "${chosen}"\n`;
       }
     });
-    contextText += "\n";
-  }
-  if (lookingFor && lookingFor.trim()) {
-    contextText += `Currently looking for: ${lookingFor.trim()}`;
   }
 
-  content.push({ type: "text", text: contextText || "Analyze the aesthetic in these images." });
+  if (!useTextPath) {
+    for (const photo of photos) {
+      if (photo) {
+        content.push({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: photo } });
+      }
+    }
+    const lines = ["Here are my outfit photos.", ""];
+    if (description) lines.push(`Style notes: '${description}'`, "");
+    if (choicesText) lines.push(`This-or-that choices:\n${choicesText.trim()}`, "");
+    if (lookingFor && lookingFor.trim()) lines.push(`What I'm looking for: '${lookingFor.trim()}'`);
+    content.push({ type: "text", text: lines.join("\n") });
+  } else {
+    const lines = ["Here's my style in words:", ""];
+    lines.push(`What I'm wearing today: '${textInputs.wearingToday}'`);
+    lines.push(`My favorite outfit I've worn recently: '${textInputs.favoriteOutfit}'`);
+    lines.push(`Brands I love: '${textInputs.brands}'`);
+    if (textInputs.description) lines.push(`Anything else about my style: '${textInputs.description}'`);
+    if (choicesText) lines.push("", `This-or-that choices:\n${choicesText.trim()}`);
+    if (lookingFor && lookingFor.trim()) lines.push("", `What I'm looking for: '${lookingFor.trim()}'`);
+    content.push({ type: "text", text: lines.join("\n") });
+  }
 
-  const system = `You are a style analyst. Given a user's outfit photos, style answers, and preferences, analyze their aesthetic and return a JSON object.
+  const wordList = NODE_IDS.join(", ");
 
-Style word list — you MUST only choose from this exact list: ${NODE_IDS.join(", ")}
+  const system = useTextPath
+    ? `You are a sharp, intuitive stylist building a taste profile for someone based on their style description, quiz answers, and preferences.
 
-Return ONLY a valid JSON object in exactly this format:
-{"words":["word1","word2","word3"],"relevant":["word1","word2","word3","word4","word5","word6","word7","word8","word9","word10","word11","word12","word13","word14","word15","word16","word17","word18","word19","word20"],"archetype":"The X Y","subtitle":"One punchy sentence about their style.","percentages":[45,32,23]}
+Your job is to analyze their aesthetic and return a JSON object. Think spatially about their style — not just which individual words fit them, but where on the aesthetic map they actually live and how far their taste stretches.
 
-Rules:
-- "words": exactly 3 words from the provided list that BEST define their core aesthetic
-- "relevant": exactly 20 words total — include all 3 from "words", plus 17 more that paint a picture of the full aesthetic landscape. Spread across diverse corners of the style universe. All 20 must come from the provided list.
-- "archetype": a 2-4 word label starting with "The" (e.g. "The Dark Romantic", "The Quiet Minimalist"). Should feel like a real style identity.
-- "subtitle": a short, punchy one-liner (10-15 words) based on their actual answers — concrete and specific, not vague. E.g. "Always dressed for a gallery opening you're 20 minutes late to."
-- "percentages": 3 integers in the same order as "words" that sum to exactly 100. Weight them meaningfully — the dominant aesthetic gets the most.`;
+Step 1 — Read the full picture: what they're wearing today, their favorite outfit, the brands they love, their this-or-that choices, and anything they've shared about what they're looking for. Pay close attention to the gap between what they wore today and their favorite outfit — everyday dress is behavioral truth, favorite outfit skews aspirational, and the distance between them is often the most revealing signal.
+
+Step 2 — Pick 3 words (the "words" field): These are the three words that most precisely capture their aesthetic core. They should feel like a revelation — words they'd screenshot and send to a friend. Prioritize specificity over safety. "Parisian" beats "classic." "Undone" beats "casual."
+
+Step 3 — Pick 20 words (the "relevant" field): Map the full territory of their taste from the word list. Think in clusters — what's their center of gravity, and how far do they range? Someone centered in minimal/clean might stretch toward editorial or structured but probably not toward maximalist. Be honest about range — don't just pick adjacent safe words, but don't overreach either.
+
+Step 4 — Write their archetype (the "archetype" field): Format is always "The [Adjective] [Noun]." It should read like a style persona — something you'd see in a fashion magazine or hear a stylist say. Clearly fashion-oriented, never generic. The adjective should create tension or surprise with the noun — two words that together say something neither word says alone. "The Quiet Parisian." "The Romantic Minimalist." Aim for that register.
+
+Step 5 — Write their subtitle (the "subtitle" field): One punchy sentence. This is the line they'll screenshot. It should capture how they move through the world stylistically — specific, a little poetic, never generic. Not "you love clean lines and neutral tones." More like "you dress like you've already been everywhere worth going."
+
+Step 6 — Assign percentages (the "percentages" field): Three numbers adding to 100. These represent the three dominant aesthetic territories in their taste map — not precise measurements, just a felt sense of proportion. Assign them in descending order.
+
+Word list:
+${wordList}
+
+Return only this JSON structure, no extra text:
+{"words":["word1","word2","word3"],"relevant":["word1","word2","word3","word4","word5","word6","word7","word8","word9","word10","word11","word12","word13","word14","word15","word16","word17","word18","word19","word20"],"archetype":"The X Y","subtitle":"One punchy sentence.","percentages":[45,32,23]}`
+    : `You are a sharp, intuitive stylist building a taste profile for someone based on their outfit photos, style answers, and preferences.
+
+Your job is to analyze their aesthetic and return a JSON object. Think spatially about their style — not just which individual words fit them, but where on the aesthetic map they actually live and how far their taste stretches.
+
+Step 1 — Read the full picture: outfit photos, this-or-that choices, and anything they've shared about what they're looking for. Look for the tension between what they wear and what they choose. That gap is often the most interesting signal.
+
+Step 2 — Pick 3 words (the "words" field): These are the three words that most precisely capture their aesthetic core. They should feel like a revelation — words they'd screenshot and send to a friend. Prioritize specificity over safety. "Parisian" beats "classic." "Undone" beats "casual."
+
+Step 3 — Pick 20 words (the "relevant" field): Map the full territory of their taste from the word list. Think in clusters — what's their center of gravity, and how far do they range? Someone centered in minimal/clean might stretch toward editorial or structured but probably not toward maximalist. Be honest about range — don't just pick adjacent safe words, but don't overreach either.
+
+Step 4 — Write their archetype (the "archetype" field): Format is always "The [Adjective] [Noun]." It should read like a style persona — something you'd see in a fashion magazine or hear a stylist say. Clearly fashion-oriented, never generic. The adjective should create tension or surprise with the noun — two words that together say something neither word says alone. "The Quiet Parisian." "The Romantic Minimalist." Aim for that register.
+
+Step 5 — Write their subtitle (the "subtitle" field): One punchy sentence. This is the line they'll screenshot. It should capture how they move through the world stylistically — specific, a little poetic, never generic. Not "you love clean lines and neutral tones." More like "you dress like you've already been everywhere worth going."
+
+Step 6 — Assign percentages (the "percentages" field): Three numbers adding to 100. These represent the three dominant aesthetic territories in their taste map — not precise measurements, just a felt sense of proportion. Assign them in descending order.
+
+Word list:
+${wordList}
+
+Return only this JSON structure, no extra text:
+{"words":["word1","word2","word3"],"relevant":["word1","word2","word3","word4","word5","word6","word7","word8","word9","word10","word11","word12","word13","word14","word15","word16","word17","word18","word19","word20"],"archetype":"The X Y","subtitle":"One punchy sentence.","percentages":[45,32,23]}`;
 
   try {
     const res = await fetch("https://api.anthropic.com/v1/messages", {
@@ -875,28 +955,20 @@ export default function App() {
   const [archetype, setArchetype]                 = useState("");
   const [subtitle, setSubtitle]                   = useState("");
   const [stylePercentages, setStylePercentages]   = useState([]);
+  const [showTextPath, setShowTextPath]           = useState(false);
+  const [wearingToday, setWearingToday]           = useState("");
+  const [favoriteOutfit, setFavoriteOutfit]       = useState("");
+  const [brands, setBrands]                       = useState("");
   const [error, setError]                         = useState("");
   const [emailError, setEmailError]               = useState("");
   const [sharing, setSharing]                     = useState(false);
-  const [phoneVerified, setPhoneVerified]         = useState(false);
-  const [showCodeInput, setShowCodeInput]         = useState(false);
-  const [verificationCode, setVerificationCode]   = useState("");
-  const [verifyError, setVerifyError]             = useState("");
-  const [sendingCode, setSendingCode]             = useState(false);
-  const [verifyingCode, setVerifyingCode]         = useState(false);
-  const [smsOptin, setSmsOptin]                   = useState(false);
   const [signupId, setSignupId]                   = useState(null);
   const [typed, setTyped]                         = useState("");
   const [heroReady, setHeroReady]                 = useState(false);
   const [submitting, setSubmitting]               = useState(false);
   const [waitlistName, setWaitlistName]           = useState("");
+  const [waitlistEmail, setWaitlistEmail]         = useState("");
   const [waitlistPhone, setWaitlistPhone]         = useState("");
-  const [waitlistPhoneVerified, setWaitlistPhoneVerified] = useState(false);
-  const [waitlistShowCode, setWaitlistShowCode]   = useState(false);
-  const [waitlistCode, setWaitlistCode]           = useState("");
-  const [waitlistVerifyError, setWaitlistVerifyError] = useState("");
-  const [waitlistSendingCode, setWaitlistSendingCode] = useState(false);
-  const [waitlistVerifyingCode, setWaitlistVerifyingCode] = useState(false);
   const [waitlistSubmitting, setWaitlistSubmitting] = useState(false);
   const [waitlistDone, setWaitlistDone]           = useState(false);
   const [waitlistError, setWaitlistError]         = useState("");
@@ -940,72 +1012,25 @@ export default function App() {
     }
   };
 
-  const sendWaitlistCode = async () => {
-    setWaitlistVerifyError("");
-    if (!waitlistPhone.trim()) { setWaitlistVerifyError("please enter your phone number"); return; }
-    if (!/^\+?[\d\s\-().]{7,15}$/.test(waitlistPhone.trim())) { setWaitlistVerifyError("please enter a valid phone number"); return; }
-    setWaitlistSendingCode(true);
-    try {
-      const res = await fetch("/api/send-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: formatPhoneE164(waitlistPhone.trim()) }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setWaitlistShowCode(true);
-      } else {
-        setWaitlistVerifyError(data.error || "failed to send code");
-      }
-    } catch {
-      setWaitlistVerifyError("failed to send code");
-    }
-    setWaitlistSendingCode(false);
-  };
-
-  const verifyWaitlistCode = async () => {
-    setWaitlistVerifyError("");
-    setWaitlistVerifyingCode(true);
-    try {
-      const res = await fetch("/api/verify-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: formatPhoneE164(waitlistPhone.trim()), code: waitlistCode }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setWaitlistPhoneVerified(true);
-        setWaitlistShowCode(false);
-        setWaitlistCode("");
-      } else {
-        setWaitlistVerifyError(data.error || "invalid code");
-      }
-    } catch {
-      setWaitlistVerifyError("verification failed");
-    }
-    setWaitlistVerifyingCode(false);
-  };
-
   const handleWaitlist = async (e) => {
     e.preventDefault();
     if (!waitlistName.trim()) { setWaitlistError("please enter your name"); return; }
-    if (!waitlistPhone.trim()) { setWaitlistError("please enter your phone number"); return; }
-    if (!waitlistPhoneVerified) { setWaitlistError("please verify your phone number"); return; }
+    if (!waitlistEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(waitlistEmail.trim())) { setWaitlistError("please enter a valid email"); return; }
     setWaitlistSubmitting(true);
     setWaitlistError("");
     try {
       if (supabase) {
-        const phoneValue = formatPhoneE164(waitlistPhone.trim());
         const { data: existing } = await supabase
           .from("submissions")
           .select("id")
-          .eq("phone", phoneValue)
+          .eq("email", waitlistEmail.trim().toLowerCase())
           .maybeSingle();
         if (!existing) {
           await supabase.from("submissions").insert({
             id: crypto.randomUUID(),
             name: waitlistName.trim(),
-            phone: phoneValue,
+            email: waitlistEmail.trim().toLowerCase(),
+            phone: waitlistPhone.trim() || null,
           });
         }
       }
@@ -1045,62 +1070,12 @@ export default function App() {
     return "+" + digits;
   };
 
-  const sendVerificationCode = async () => {
-    setVerifyError("");
-    if (!phone.trim()) { setVerifyError("please enter your phone number"); return; }
-    if (!/^\+?[\d\s\-().]{7,15}$/.test(phone.trim())) { setVerifyError("please enter a valid phone number"); return; }
-    setSendingCode(true);
-    try {
-      const res = await fetch("/api/send-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: formatPhoneE164(phone.trim()) }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setShowCodeInput(true);
-      } else {
-        setVerifyError(data.error || "failed to send code");
-      }
-    } catch {
-      setVerifyError("failed to send code");
-    }
-    setSendingCode(false);
-  };
-
-  const verifyCode = async () => {
-    setVerifyError("");
-    setVerifyingCode(true);
-    try {
-      const res = await fetch("/api/verify-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: formatPhoneE164(phone.trim()), code: verificationCode }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setPhoneVerified(true);
-        setShowCodeInput(false);
-        setVerificationCode("");
-      } else {
-        setVerifyError(data.error || "invalid code");
-      }
-    } catch {
-      setVerifyError("verification failed");
-    }
-    setVerifyingCode(false);
-  };
-
   const handleSignup = async (e) => {
     e.preventDefault();
     if (!name.trim()) { setEmailError("please enter your name"); return; }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setEmailError("please enter a valid email"); return; }
-    if (!phone.trim()) { setEmailError("please enter your phone number"); return; }
-    if (!/^\+?[\d\s\-().]{7,15}$/.test(phone.trim())) { setEmailError("please enter a valid phone number"); return; }
-    if (!phoneVerified) { setEmailError("please verify your phone number"); return; }
     if (submitting) return;
     setSubmitting(true);
-    setSmsOptin(true);
     setEmailError("");
     try {
 
@@ -1125,8 +1100,14 @@ export default function App() {
     setStep("generating");
 
     const validPhotos = photos.filter(Boolean);
+    const textInputs = validPhotos.length === 0 ? {
+      wearingToday: wearingToday.trim(),
+      favoriteOutfit: favoriteOutfit.trim(),
+      brands: brands.trim(),
+      description: description.trim() || null,
+    } : null;
     const [result] = await Promise.all([
-      generateStyleWords(validPhotos, description, thisThatQuestions, thisThatAnswers, lookingFor),
+      generateStyleWords(validPhotos, description, thisThatQuestions, thisThatAnswers, lookingFor, textInputs),
       new Promise(resolve => setTimeout(resolve, 2500)),
     ]);
     const finalWords       = result?.words       || ["minimal", "editorial", "dark"];
@@ -1146,9 +1127,9 @@ export default function App() {
 
       const submissionData = {
         name: name.trim(),
-        email: email.trim(),
+        email: email.trim().toLowerCase(),
         phone: phone.trim() || null,
-        description: description.trim(),
+        description: description.trim() || null,
         question_1: thisThatQuestions?.[0] ? formatQuestion(thisThatQuestions[0]) : null,
         answer_1: thisThatAnswers[0] === "A" ? thisThatQuestions?.[0]?.optionA : thisThatQuestions?.[0]?.optionB,
         question_2: thisThatQuestions?.[1] ? formatQuestion(thisThatQuestions[1]) : null,
@@ -1159,36 +1140,29 @@ export default function App() {
         archetype: finalArchetype,
         looking_for: lookingFor.trim() || null,
         photo_urls: photoUrls.length > 0 ? photoUrls : null,
-        sms_optin: true,
       };
 
-      const phoneValue = phone.trim() || null;
+      const emailValue = email.trim().toLowerCase();
+      const { data: existing } = await supabase
+        .from("submissions")
+        .select("id, submission_count")
+        .eq("email", emailValue)
+        .maybeSingle();
+
       let err;
-      if (phoneValue) {
-        const { data: existing } = await supabase
+      if (existing) {
+        const nonNullData = Object.fromEntries(
+          Object.entries(submissionData).filter(([, v]) => v !== null && v !== undefined)
+        );
+        const { error: updateErr } = await supabase
           .from("submissions")
-          .select("id")
-          .eq("phone", phoneValue)
-          .maybeSingle();
-        if (existing) {
-          const nonNullData = Object.fromEntries(
-            Object.entries(submissionData).filter(([, v]) => v !== null && v !== undefined)
-          );
-          const { error: updateErr } = await supabase
-            .from("submissions")
-            .update(nonNullData)
-            .eq("phone", phoneValue);
-          err = updateErr;
-        } else {
-          const { error: insertErr } = await supabase
-            .from("submissions")
-            .insert({ id: submissionId, ...submissionData });
-          err = insertErr;
-        }
+          .update({ ...nonNullData, submission_count: (existing.submission_count || 1) + 1 })
+          .eq("email", emailValue);
+        err = updateErr;
       } else {
         const { error: insertErr } = await supabase
           .from("submissions")
-          .insert({ id: submissionId, ...submissionData });
+          .insert({ id: submissionId, ...submissionData, submission_count: 1 });
         err = insertErr;
       }
       if (err) console.error("Supabase submissions error:", err.message);
@@ -1244,6 +1218,25 @@ export default function App() {
 
     const validPhotos = photos.filter(Boolean);
     const questions = await generateThisThatQuestions(validPhotos, description);
+    setThisThatQuestions(questions || getFallbackQuestions());
+    setQuestionsLoading(false);
+  };
+
+  const handleTextUpload = async (e) => {
+    e.preventDefault();
+    if (!wearingToday.trim()) { setError("please describe what you're wearing today"); return; }
+    if (!favoriteOutfit.trim()) { setError("please describe your favorite outfit"); return; }
+    if (!brands.trim()) { setError("please enter at least one brand you love"); return; }
+    setError("");
+    setQuestionsLoading(true);
+    setStep("questions");
+
+    const questions = await generateThisThatQuestions([], null, {
+      wearingToday: wearingToday.trim(),
+      favoriteOutfit: favoriteOutfit.trim(),
+      brands: brands.trim(),
+      description: description.trim() || null,
+    });
     setThisThatQuestions(questions || getFallbackQuestions());
     setQuestionsLoading(false);
   };
@@ -1344,16 +1337,13 @@ export default function App() {
                 </h1>
 
                 <p style={{ fontSize: 13, color: "#b0b0b0", lineHeight: 1.8, marginBottom: 44, maxWidth: 480, letterSpacing: "0.02em", opacity: heroReady ? 1 : 0, animation: heroReady ? "fadeUp 0.55s cubic-bezier(0.16,1,0.3,1) 0s both" : "none" }}>
-                   we learn your taste so that every online shopping experience is tailored to you
+                   build your taste profile today — and be first in line when we launch our full personal styling experience
                 </p>
                 <button onClick={() => setStep("upload")} style={{ ...btnStyle, opacity: heroReady ? 1 : 0, animation: heroReady ? "fadeUp 0.55s cubic-bezier(0.16,1,0.3,1) 0.18s both" : "none" }}>
                   take the taste test →
                 </button>
-                <p style={{ fontSize: 12, color: "#b0b0b0", marginTop: 16, letterSpacing: "0.05em", opacity: heroReady ? 1 : 0, animation: heroReady ? "fadeUp 0.55s cubic-bezier(0.16,1,0.3,1) 0.32s both" : "none" }}>
-                  get your taste profile today
-                </p>
                 <button onClick={() => setStep("waitlist")} style={{ ...ghostBtnStyle, marginTop: 32, fontSize: 10, letterSpacing: "0.08em", padding: "10px 20px", opacity: heroReady ? 1 : 0, animation: heroReady ? "fadeUp 0.55s cubic-bezier(0.16,1,0.3,1) 0.42s both" : "none" }}>
-                  not ready yet? save your spot →
+                  not ready yet? join the waitlist →
                 </button>
               </div>
             </div>
@@ -1375,13 +1365,10 @@ export default function App() {
                     letterSpacing: "-0.01em",
                     textAlign: "center",
                   }}>
-                    save your spot.
+                    stay in the loop.
                   </h2>
-                  <p style={{ fontSize: 12, color: "#b0b0b0", marginBottom: 8, letterSpacing: "0.03em", lineHeight: 1.8, textAlign: "center", maxWidth: 360 }}>
-                    no rush — come back whenever you're ready.
-                  </p>
-                  <p style={{ fontSize: 12, color: "#888", marginBottom: 36, letterSpacing: "0.03em", lineHeight: 1.8, textAlign: "center", maxWidth: 360 }}>
-                    leave your info and we'll be here waiting when you are.
+                  <p style={{ fontSize: 12, color: "#b0b0b0", marginBottom: 36, letterSpacing: "0.03em", lineHeight: 1.8, textAlign: "center", maxWidth: 360 }}>
+                    drop your info and we'll let you know when our full styling product launches — plus remind you to come back and take the test whenever you're ready.
                   </p>
                   <form onSubmit={handleWaitlist} style={{ width: "100%", maxWidth: 400 }}>
                     <div style={{ marginBottom: 14 }}>
@@ -1394,91 +1381,30 @@ export default function App() {
                         autoComplete="name"
                       />
                     </div>
-                    <div style={{ marginBottom: 8 }}>
+                    <div style={{ marginBottom: 14 }}>
                       <input
-                        type="tel"
-                        placeholder="your phone number"
-                        value={waitlistPhone}
-                        onChange={e => { setWaitlistPhone(e.target.value); setWaitlistPhoneVerified(false); setWaitlistShowCode(false); setWaitlistVerifyError(""); }}
+                        type="email"
+                        placeholder="your email"
+                        value={waitlistEmail}
+                        onChange={e => { setWaitlistEmail(e.target.value); setWaitlistError(""); }}
                         style={inputStyle}
-                        autoComplete="tel"
-                        disabled={waitlistPhoneVerified}
+                        autoComplete="email"
                       />
                     </div>
-                    {!waitlistPhoneVerified && (
-                      <div style={{ marginBottom: 20 }}>
-                        {!waitlistShowCode ? (
-                          <button
-                            type="button"
-                            onClick={sendWaitlistCode}
-                            disabled={waitlistSendingCode}
-                            style={{
-                              background: "none",
-                              border: "1px solid rgba(140, 200, 255, 0.25)",
-                              color: waitlistSendingCode ? "#555" : "#888",
-                              fontSize: 11,
-                              letterSpacing: "0.06em",
-                              padding: "10px 16px",
-                              cursor: waitlistSendingCode ? "default" : "pointer",
-                              width: "100%",
-                            }}
-                          >
-                            {waitlistSendingCode ? "sending..." : "send verification code"}
-                          </button>
-                        ) : (
-                          <div style={{ display: "flex", gap: 8 }}>
-                            <input
-                              type="text"
-                              inputMode="numeric"
-                              maxLength={6}
-                              placeholder="6-digit code"
-                              value={waitlistCode}
-                              onChange={e => setWaitlistCode(e.target.value)}
-                              style={{ ...inputStyle, flex: 1, marginBottom: 0 }}
-                            />
-                            <button
-                              type="button"
-                              onClick={verifyWaitlistCode}
-                              disabled={waitlistVerifyingCode}
-                              style={{
-                                background: "#fff",
-                                border: "none",
-                                color: "#0a0a0a",
-                                fontSize: 11,
-                                letterSpacing: "0.06em",
-                                padding: "10px 16px",
-                                cursor: waitlistVerifyingCode ? "default" : "pointer",
-                                whiteSpace: "nowrap",
-                                opacity: waitlistVerifyingCode ? 0.5 : 1,
-                              }}
-                            >
-                              {waitlistVerifyingCode ? "verifying..." : "verify"}
-                            </button>
-                          </div>
-                        )}
-                        {waitlistVerifyError && <p style={{ fontSize: 11, color: "#b0b0b0", marginTop: 8 }}>{waitlistVerifyError}</p>}
-                        {waitlistShowCode && (
-                          <button
-                            type="button"
-                            onClick={sendWaitlistCode}
-                            disabled={waitlistSendingCode}
-                            style={{ background: "none", border: "none", color: "#808080", fontSize: 10, letterSpacing: "0.04em", marginTop: 8, cursor: "pointer", padding: 0 }}
-                          >
-                            resend code
-                          </button>
-                        )}
-                      </div>
-                    )}
-                    {waitlistPhoneVerified && (
-                      <p style={{ fontSize: 11, color: "#b0b0b0", letterSpacing: "0.04em", marginBottom: 20 }}>phone verified ✓</p>
-                    )}
+                    <div style={{ marginBottom: 20 }}>
+                      <input
+                        type="tel"
+                        placeholder="phone number (optional)"
+                        value={waitlistPhone}
+                        onChange={e => { setWaitlistPhone(e.target.value); setWaitlistError(""); }}
+                        style={inputStyle}
+                        autoComplete="tel"
+                      />
+                    </div>
                     {waitlistError && <p style={{ fontSize: 11, color: "#b0b0b0", marginBottom: 12 }}>{waitlistError}</p>}
-                    <button type="submit" disabled={!waitlistPhoneVerified || waitlistSubmitting} style={{ ...btnStyle, width: "100%", textAlign: "center", opacity: waitlistPhoneVerified && !waitlistSubmitting ? 1 : 0.4, cursor: waitlistPhoneVerified && !waitlistSubmitting ? "pointer" : "default" }}>
-                      {waitlistSubmitting ? "saving..." : "save my spot →"}
+                    <button type="submit" disabled={waitlistSubmitting} style={{ ...btnStyle, width: "100%", textAlign: "center", opacity: waitlistSubmitting ? 0.4 : 1, cursor: waitlistSubmitting ? "default" : "pointer" }}>
+                      {waitlistSubmitting ? "saving..." : "join the waitlist →"}
                     </button>
-                    <p style={{ fontSize: 10, color: "#808080", letterSpacing: "0.03em", lineHeight: 1.7, marginTop: 12, textAlign: "center" }}>
-                      by continuing you agree to receive texts from us. reply STOP anytime.
-                    </p>
                   </form>
                 </>
               ) : (
@@ -1496,7 +1422,7 @@ export default function App() {
                     you're on the list.
                   </h2>
                   <p style={{ fontSize: 12, color: "#b0b0b0", marginBottom: 36, letterSpacing: "0.03em", lineHeight: 1.8, textAlign: "center", maxWidth: 360 }}>
-                    we'll be here whenever you're ready to take the test.
+                    we'll reach out when we launch. and whenever you're ready to take the test, we'll be here.
                   </p>
                   <button onClick={() => setStep("home")} style={{ ...ghostBtnStyle, fontSize: 10, letterSpacing: "0.08em", padding: "10px 20px" }}>
                     back to home
@@ -1523,7 +1449,7 @@ export default function App() {
                 unlock your results
               </h2>
               <p style={{ fontSize: 13, color: "#b0b0b0", lineHeight: 1.8, marginBottom: 40, maxWidth: 380, letterSpacing: "0.02em", textAlign: "center" }}>
-                enter your info to reveal your taste profile
+                get your taste profile now and early access to our full styling product when we launch
               </p>
               <form onSubmit={handleSignup} style={{ width: "100%", maxWidth: 400 }}>
                 <div style={{ marginBottom: 14 }}>
@@ -1546,91 +1472,20 @@ export default function App() {
                     autoComplete="email"
                   />
                 </div>
-                <div style={{ marginBottom: 8 }}>
+                <div style={{ marginBottom: 20 }}>
                   <input
                     type="tel"
-                    placeholder="your phone number"
+                    placeholder="phone number (optional)"
                     value={phone}
-                    onChange={e => { setPhone(e.target.value); setPhoneVerified(false); setShowCodeInput(false); setVerifyError(""); }}
+                    onChange={e => setPhone(e.target.value)}
                     style={inputStyle}
                     autoComplete="tel"
-                    disabled={phoneVerified}
                   />
                 </div>
-                {!phoneVerified && (
-                  <div style={{ marginBottom: 20 }}>
-                    {!showCodeInput ? (
-                      <button
-                        type="button"
-                        onClick={sendVerificationCode}
-                        disabled={sendingCode}
-                        style={{
-                          background: "none",
-                          border: "1px solid rgba(140, 200, 255, 0.25)",
-                          color: sendingCode ? "#555" : "#888",
-                          fontSize: 11,
-                          letterSpacing: "0.06em",
-                          padding: "10px 16px",
-                          cursor: sendingCode ? "default" : "pointer",
-                          width: "100%",
-                        }}
-                      >
-                        {sendingCode ? "sending..." : "send verification code"}
-                      </button>
-                    ) : (
-                      <div style={{ display: "flex", gap: 8 }}>
-                        <input
-                          type="text"
-                          inputMode="numeric"
-                          maxLength={6}
-                          placeholder="6-digit code"
-                          value={verificationCode}
-                          onChange={e => setVerificationCode(e.target.value)}
-                          style={{ ...inputStyle, flex: 1, marginBottom: 0 }}
-                        />
-                        <button
-                          type="button"
-                          onClick={verifyCode}
-                          disabled={verifyingCode}
-                          style={{
-                            background: "#fff",
-                            border: "none",
-                            color: "#0a0a0a",
-                            fontSize: 11,
-                            letterSpacing: "0.06em",
-                            padding: "10px 16px",
-                            cursor: verifyingCode ? "default" : "pointer",
-                            whiteSpace: "nowrap",
-                            opacity: verifyingCode ? 0.5 : 1,
-                          }}
-                        >
-                          {verifyingCode ? "verifying..." : "verify"}
-                        </button>
-                      </div>
-                    )}
-                    {verifyError && <p style={{ fontSize: 11, color: "#b0b0b0", marginTop: 8 }}>{verifyError}</p>}
-                    {showCodeInput && (
-                      <button
-                        type="button"
-                        onClick={sendVerificationCode}
-                        disabled={sendingCode}
-                        style={{ background: "none", border: "none", color: "#808080", fontSize: 10, letterSpacing: "0.04em", marginTop: 8, cursor: "pointer", padding: 0 }}
-                      >
-                        resend code
-                      </button>
-                    )}
-                  </div>
-                )}
-                {phoneVerified && (
-                  <p style={{ fontSize: 11, color: "#b0b0b0", letterSpacing: "0.04em", marginBottom: 20 }}>phone verified ✓</p>
-                )}
                 {emailError && <p style={{ fontSize: 11, color: "#b0b0b0", marginBottom: 12 }}>{emailError}</p>}
-                <button type="submit" disabled={!phoneVerified || submitting} style={{ ...btnStyle, width: "100%", textAlign: "center", opacity: (phoneVerified && !submitting) ? 1 : 0.4, cursor: (phoneVerified && !submitting) ? "pointer" : "default" }}>
+                <button type="submit" disabled={submitting} style={{ ...btnStyle, width: "100%", textAlign: "center", opacity: submitting ? 0.4 : 1, cursor: submitting ? "default" : "pointer" }}>
                   {submitting ? "submitting..." : "reveal my taste →"}
                 </button>
-                <p style={{ fontSize: 10, color: "#808080", letterSpacing: "0.03em", lineHeight: 1.7, marginTop: 12, textAlign: "center" }}>
-                  by continuing you agree to receive texts from us. reply STOP anytime.
-                </p>
               </form>
             </div>
           )}
@@ -1651,79 +1506,150 @@ export default function App() {
               }}>
                 show us your style.
               </h2>
-              <p style={{ fontSize: 11, color: "#c8c8c8", marginBottom: 36, letterSpacing: "0.04em", lineHeight: 1.6, textAlign: "center" }}>
-                upload 2–3 photos of your favorite outfits
-              </p>
 
-              <form onSubmit={handleUpload} style={{ width: "100%", maxWidth: 400, display: "flex", flexDirection: "column", alignItems: "center" }}>
+              {!showTextPath ? (
+                <>
+                  <p style={{ fontSize: 11, color: "#c8c8c8", marginBottom: 36, letterSpacing: "0.04em", lineHeight: 1.6, textAlign: "center" }}>
+                    outfit photos, saved inspo, screenshots — anything that shows how you actually dress
+                  </p>
+                  <form onSubmit={handleUpload} style={{ width: "100%", maxWidth: 400, display: "flex", flexDirection: "column", alignItems: "center" }}>
 
-                {/* Photo slots */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, width: "100%", marginBottom: 20 }}>
-                  {[0, 1, 2].map((i) => (
-                    <div key={i} style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                      <div
-                        onClick={() => fileRefs[i].current?.click()}
-                        style={{
-                          border: "1px dashed rgba(140, 200, 255, 0.25)",
-                          cursor: "pointer",
-                          overflow: "hidden",
-                          aspectRatio: "3 / 4",
-                          display: "flex",
-                          flexDirection: "column",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          position: "relative",
-                          background: photoPreviews[i] ? "transparent" : "#0f0f0f",
-                        }}
-                      >
-                        {photoPreviews[i] ? (
-                          <img
-                            src={photoPreviews[i]}
-                            alt={`outfit ${i + 1}`}
-                            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                    {/* Photo slots */}
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, width: "100%", marginBottom: 16 }}>
+                      {[0, 1, 2].map((i) => (
+                        <div key={i} style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                          <div
+                            onClick={() => fileRefs[i].current?.click()}
+                            style={{
+                              border: "1px dashed rgba(140, 200, 255, 0.25)",
+                              cursor: "pointer",
+                              overflow: "hidden",
+                              aspectRatio: "3 / 4",
+                              display: "flex",
+                              flexDirection: "column",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              position: "relative",
+                              background: photoPreviews[i] ? "transparent" : "#0f0f0f",
+                            }}
+                          >
+                            {photoPreviews[i] ? (
+                              <img
+                                src={photoPreviews[i]}
+                                alt={`outfit ${i + 1}`}
+                                style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                              />
+                            ) : (
+                              <span style={{ fontSize: 20, color: "#808080", lineHeight: 1 }}>+</span>
+                            )}
+                          </div>
+                          <p style={{ fontSize: 9, color: "#909090", letterSpacing: "0.08em", textAlign: "center", textTransform: "uppercase" }}>
+                            {i === 2 ? "optional" : "required"}
+                          </p>
+                          <input
+                            ref={fileRefs[i]}
+                            type="file"
+                            accept="image/*"
+                            onChange={e => handlePhotoUpload(e, i)}
+                            style={{ display: "none" }}
                           />
-                        ) : (
-                          <span style={{ fontSize: 20, color: "#808080", lineHeight: 1 }}>+</span>
-                        )}
-                      </div>
-                      <p style={{ fontSize: 9, color: "#909090", letterSpacing: "0.08em", textAlign: "center", textTransform: "uppercase" }}>
-                        {i === 2 ? "optional" : "required"}
-                      </p>
+                        </div>
+                      ))}
+                    </div>
+
+                    <p style={{ fontSize: 11, color: "#808080", marginBottom: 20, letterSpacing: "0.03em", textAlign: "center" }}>
+                      don't have outfit photos?{" "}
+                      <button
+                        type="button"
+                        onClick={() => { setShowTextPath(true); setError(""); }}
+                        style={{ background: "none", border: "none", padding: 0, color: "#c8c8c8", fontSize: 11, letterSpacing: "0.03em", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}
+                      >
+                        describe your style instead
+                      </button>
+                    </p>
+
+                    {/* Optional description */}
+                    <textarea
+                      placeholder="add more about your style (optional) — vibes, references, what you gravitate toward..."
+                      value={description}
+                      onChange={e => setDescription(e.target.value)}
+                      rows={3}
+                      style={{ ...inputStyle, resize: "none", lineHeight: 1.7, paddingTop: 12, width: "100%", marginBottom: 4 }}
+                    />
+
+                    {error && <p style={{ fontSize: 11, color: "#b0b0b0", marginTop: 10, alignSelf: "flex-start" }}>{error}</p>}
+                    <button type="submit" style={{ ...btnStyle, marginTop: 28, width: "100%", textAlign: "center" }}>
+                      continue →
+                    </button>
+                    <p style={{ fontSize: 11, color: "#808080", marginTop: 20, letterSpacing: "0.03em", textAlign: "center" }}>
+                      don't have time right now?{" "}
+                      <button
+                        type="button"
+                        onClick={() => setStep("waitlist")}
+                        style={{ background: "none", border: "none", padding: 0, color: "#c8c8c8", fontSize: 11, letterSpacing: "0.03em", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}
+                      >
+                        join the waitlist
+                      </button>
+                    </p>
+                  </form>
+                </>
+              ) : (
+                <>
+                  <p style={{ fontSize: 11, color: "#c8c8c8", marginBottom: 36, letterSpacing: "0.04em", lineHeight: 1.6, textAlign: "center" }}>
+                    tell us a bit about how you dress
+                  </p>
+                  <form onSubmit={handleTextUpload} style={{ width: "100%", maxWidth: 400, display: "flex", flexDirection: "column", alignItems: "center" }}>
+                    <div style={{ width: "100%", marginBottom: 14 }}>
                       <input
-                        ref={fileRefs[i]}
-                        type="file"
-                        accept="image/*"
-                        onChange={e => handlePhotoUpload(e, i)}
-                        style={{ display: "none" }}
+                        type="text"
+                        placeholder="what are you wearing today? e.g. baggy jeans, a vintage tee, white sneakers"
+                        value={wearingToday}
+                        onChange={e => { setWearingToday(e.target.value); setError(""); }}
+                        style={inputStyle}
                       />
                     </div>
-                  ))}
-                </div>
+                    <div style={{ width: "100%", marginBottom: 14 }}>
+                      <input
+                        type="text"
+                        placeholder="favorite outfit you've worn recently — describe it, what made it work?"
+                        value={favoriteOutfit}
+                        onChange={e => { setFavoriteOutfit(e.target.value); setError(""); }}
+                        style={inputStyle}
+                      />
+                    </div>
+                    <div style={{ width: "100%", marginBottom: 14 }}>
+                      <input
+                        type="text"
+                        placeholder="brands you love e.g. Cos, Zara, Toteme"
+                        value={brands}
+                        onChange={e => { setBrands(e.target.value); setError(""); }}
+                        style={inputStyle}
+                      />
+                    </div>
+                    <textarea
+                      placeholder="anything else about your vibe? (optional) — references, aesthetics, what you gravitate toward..."
+                      value={description}
+                      onChange={e => setDescription(e.target.value)}
+                      rows={3}
+                      style={{ ...inputStyle, resize: "none", lineHeight: 1.7, paddingTop: 12, width: "100%", marginBottom: 4 }}
+                    />
 
-                {/* Optional description */}
-                <textarea
-                  placeholder="add more about your style (optional) — vibes, references, what you gravitate toward..."
-                  value={description}
-                  onChange={e => setDescription(e.target.value)}
-                  rows={3}
-                  style={{ ...inputStyle, resize: "none", lineHeight: 1.7, paddingTop: 12, width: "100%", marginBottom: 4 }}
-                />
-
-                {error && <p style={{ fontSize: 11, color: "#b0b0b0", marginTop: 10, alignSelf: "flex-start" }}>{error}</p>}
-                <button type="submit" style={{ ...btnStyle, marginTop: 28, width: "100%", textAlign: "center" }}>
-                  continue →
-                </button>
-                <p style={{ fontSize: 11, color: "#808080", marginTop: 20, letterSpacing: "0.03em", textAlign: "center" }}>
-                  not ready?{" "}
-                  <button
-                    type="button"
-                    onClick={() => setStep("waitlist")}
-                    style={{ background: "none", border: "none", padding: 0, color: "#c8c8c8", fontSize: 11, letterSpacing: "0.03em", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}
-                  >
-                    join the waitlist
-                  </button>
-                </p>
-              </form>
+                    {error && <p style={{ fontSize: 11, color: "#b0b0b0", marginTop: 10, alignSelf: "flex-start" }}>{error}</p>}
+                    <button type="submit" style={{ ...btnStyle, marginTop: 28, width: "100%", textAlign: "center" }}>
+                      continue →
+                    </button>
+                    <p style={{ fontSize: 11, color: "#808080", marginTop: 20, letterSpacing: "0.03em", textAlign: "center" }}>
+                      <button
+                        type="button"
+                        onClick={() => { setShowTextPath(false); setError(""); }}
+                        style={{ background: "none", border: "none", padding: 0, color: "#c8c8c8", fontSize: 11, letterSpacing: "0.03em", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}
+                      >
+                        ← back to photo upload
+                      </button>
+                    </p>
+                  </form>
+                </>
+              )}
             </div>
           )}
 
