@@ -204,12 +204,12 @@ const NODE_MAP = Object.fromEntries(STYLE_NODES.map(n => [n.id, n]));
 // ─── STYLES ─────────────────────────────────────────────────────────────────
 const GlobalStyles = () => (
   <style>{`
-    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400&family=DM+Mono:wght@300;400&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Forum&family=Inter:wght@300;400;500&display=swap');
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: #0a0a0a; color: #fff; overflow-x: hidden; }
-    .app { font-family: 'DM Mono', monospace; background: #0a0a0a; color: #fff; min-height: 100vh; padding-bottom: env(safe-area-inset-bottom); }
-    .page { max-width: 1280px; margin: 0 auto; padding: 0 28px; }
-    input, textarea, button { font-family: 'DM Mono', monospace; }
+    body { background: #fff; color: #1B0E41; overflow-x: hidden; }
+    .app { font-family: 'Inter', sans-serif; background: #fff; color: #1B0E41; min-height: 100vh; padding-bottom: env(safe-area-inset-bottom); display: flex; flex-direction: column; }
+    .page { padding: 0 28px; }
+    input, textarea, button { font-family: 'Inter', sans-serif; }
     input:focus, textarea:focus { outline: none; }
     input::placeholder, textarea::placeholder { color: #909090; }
     button { cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
@@ -230,28 +230,58 @@ const GlobalStyles = () => (
     .fade-in    { animation: fadeIn 0.5s ease forwards; }
     .spinner    { animation: spin 0.8s linear infinite; }
 
-    /* ── Site nav ── */
-    .site-nav {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 28px 0;
-      border-bottom: 1px solid rgba(140, 200, 255, 0.1);
+    /* ── Announcement bar ── */
+    .announcement-bar {
+      background: #1B0E41;
+      color: #fff;
+      text-align: center;
+      padding: 12px 0;
+      font-family: 'Inter', sans-serif;
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      font-weight: 400;
     }
 
     /* ── Home hero ── */
     .home-hero {
       display: flex;
       flex-direction: column;
-      align-items: center;
-      text-align: center;
-      min-height: calc(100vh - 82px);
-      justify-content: center;
-      padding: 64px 0 80px;
+      align-items: flex-start;
+      text-align: left;
+      padding: 36px 0 20px;
     }
-    @media (min-width: 860px) {
-      .page { padding: 0 72px; }
-      .home-hero { padding: 80px 0; }
+
+    /* ── Brand wordmark ── */
+    .brand-wordmark {
+      font-family: 'Forum', serif;
+      font-size: 21vw;
+      color: #1B0E41;
+      line-height: 0.82;
+      letter-spacing: -0.02em;
+      white-space: nowrap;
+      overflow: visible;
+    }
+
+    /* ── Site footer ── */
+    .site-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 16px 0 24px;
+    }
+    .site-footer-link {
+      font-family: 'Inter', sans-serif;
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #1B0E41;
+      cursor: pointer;
+      padding-bottom: 6px;
+      border: none;
+      border-bottom: 2px solid #1B0E41;
+      background: none;
+      font-weight: 400;
     }
 
     /* ── Generating ── */
@@ -271,6 +301,8 @@ const GlobalStyles = () => (
       aspect-ratio: 1;
     }
     @media (min-width: 860px) {
+      .page { padding: 0 40px; }
+      .home-hero { padding: 40px 0 24px; }
       .results-right {
         display: flex;
         align-items: center;
@@ -294,17 +326,17 @@ const GlobalStyles = () => (
 const inputStyle = {
   width: "100%",
   border: "none",
-  borderBottom: "1px solid rgba(140, 200, 255, 0.22)",
+  borderBottom: "1px solid rgba(27, 14, 65, 0.22)",
   padding: "12px 0",
   fontSize: 16,
   background: "transparent",
-  color: "#fff",
+  color: "#1B0E41",
   letterSpacing: "0.02em",
 };
 
 const btnStyle = {
-  background: "#fff",
-  color: "#0a0a0a",
+  background: "#1B0E41",
+  color: "#fff",
   border: "none",
   padding: "14px 28px",
   fontSize: 11,
@@ -316,8 +348,8 @@ const btnStyle = {
 
 const ghostBtnStyle = {
   background: "transparent",
-  color: "#fff",
-  border: "1px solid rgba(140, 200, 255, 0.3)",
+  color: "#1B0E41",
+  border: "1px solid rgba(27, 14, 65, 0.3)",
   padding: "14px 28px",
   fontSize: 11,
   letterSpacing: "0.12em",
@@ -627,10 +659,10 @@ const Constellation = ({ highlightedWords, relevantWords }) => {
         key={i}
         x1={p1.x} y1={p1.y}
         x2={p2.x} y2={p2.y}
-        stroke="rgb(180, 220, 255)"
+        stroke="rgba(27,14,65,0.4)"
         strokeWidth="0.25"
         strokeDasharray="2.5 2"
-        opacity="0.6"
+        opacity="1"
       />
     ));
   };
@@ -648,7 +680,7 @@ const Constellation = ({ highlightedWords, relevantWords }) => {
         const isH = highlighted.has(node.id);
         const showAll = relevant.size === 0;
         const r = isH ? 1.3 : showLabels ? 0.6 : showAll ? 0.3 : 0.5;
-        const fill = isH ? "#fff" : showLabels ? "#a0a0a0" : "#808080";
+        const fill = isH ? "#1B0E41" : showLabels ? "rgba(27,14,65,0.35)" : "rgba(27,14,65,0.25)";
         const { dx, dy, textAnchor } = getLabelProps(node);
 
         return (
@@ -656,7 +688,7 @@ const Constellation = ({ highlightedWords, relevantWords }) => {
             {isH && (
               <circle
                 cx={node.x} cy={node.y} r={5}
-                fill="none" stroke="rgb(180, 220, 255)" strokeWidth="0.3" opacity="0.3"
+                fill="none" stroke="rgba(27,14,65,0.15)" strokeWidth="0.3" opacity="1"
               />
             )}
             <circle cx={node.x} cy={node.y} r={r} fill={fill} />
@@ -666,8 +698,8 @@ const Constellation = ({ highlightedWords, relevantWords }) => {
                 y={node.y + dy}
                 textAnchor={textAnchor}
                 fontSize="1.85"
-                fontFamily="DM Mono, monospace"
-                fill={isH ? "#fff" : "#a0a0a0"}
+                fontFamily="Inter, sans-serif"
+                fill={isH ? "#1B0E41" : "rgba(27,14,65,0.4)"}
                 fontWeight={isH ? "400" : "300"}
                 letterSpacing="0.03em"
               >
@@ -741,9 +773,9 @@ const AnimatedConstellation = ({ fullScreen = false }) => {
           key={uid}
           x1={cx(STYLE_NODES[a].x)} y1={cy(STYLE_NODES[a].y)}
           x2={cx(STYLE_NODES[b].x)} y2={cy(STYLE_NODES[b].y)}
-          stroke="#fff"
+          stroke="rgba(27,14,65,0.2)"
           strokeWidth="0.5"
-          opacity="0.22"
+          opacity="1"
           style={{ animation: "lineIn 0.9s ease forwards" }}
         />
       ))}
@@ -755,14 +787,14 @@ const AnimatedConstellation = ({ fullScreen = false }) => {
           <g key={node.id} style={{ transition: "opacity 0.3s" }}>
             {isGlow && (
               <>
-                <circle cx={nx} cy={ny} r={20} fill="none" stroke="#fff" strokeWidth="0.4" opacity="0.07" />
-                <circle cx={nx} cy={ny} r={11} fill="none" stroke="#fff" strokeWidth="0.5" opacity="0.13" />
+                <circle cx={nx} cy={ny} r={20} fill="none" stroke="rgba(27,14,65,0.08)" strokeWidth="0.4" opacity="1" />
+                <circle cx={nx} cy={ny} r={11} fill="none" stroke="rgba(27,14,65,0.15)" strokeWidth="0.5" opacity="1" />
               </>
             )}
             <circle
               cx={nx} cy={ny}
               r={isGlow ? 4 : 1.5}
-              fill={isGlow ? "#fff" : "#a0a0a0"}
+              fill={isGlow ? "#1B0E41" : "rgba(27,14,65,0.25)"}
               style={{ transition: "fill 0.35s ease" }}
             />
           </g>
@@ -780,13 +812,13 @@ const createShareCard = async (words, relevant, archetype, percentages, userName
   const ctx = canvas.getContext("2d");
 
   await Promise.all([
-    document.fonts.load('italic 400 85px "Playfair Display"'),
-    document.fonts.load('400 50px "DM Mono"'),
-    document.fonts.load('300 29px "DM Mono"'),
+    document.fonts.load('400 85px "Forum"'),
+    document.fonts.load('400 50px "Inter"'),
+    document.fonts.load('300 29px "Inter"'),
   ]);
 
   // Background
-  ctx.fillStyle = "#0a0a0a";
+  ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, W, H);
 
   const PAD = 70;
@@ -798,21 +830,21 @@ const createShareCard = async (words, relevant, archetype, percentages, userName
     ctx.setLineDash([8, 6]);
     ctx.moveTo(PAD, yPos);
     ctx.lineTo(W - PAD, yPos);
-    ctx.strokeStyle = "rgba(140, 200, 255, 0.2)";
+    ctx.strokeStyle = "rgba(27, 14, 65, 0.15)";
     ctx.lineWidth = 1.5;
     ctx.stroke();
     ctx.setLineDash([]);
   };
 
   // ── HEADER ROW ────────────────────────────────────────────────
-  ctx.font = '300 29px "DM Mono", monospace';
-  ctx.fillStyle = "#909090";
+  ctx.font = '300 29px "Inter", sans-serif';
+  ctx.fillStyle = "rgba(27, 14, 65, 0.45)";
   ctx.textAlign = "left";
-  ctx.fillText("TASTE PROFILE", PAD, y);
+  ctx.fillText("YOUR PATTERN", PAD, y);
 
   const dateStr = new Date().toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" }).replace(/\//g, ".");
-  ctx.fillStyle = "#808080";
-  ctx.font = '300 27px "DM Mono", monospace';
+  ctx.fillStyle = "rgba(27, 14, 65, 0.4)";
+  ctx.font = '300 27px "Inter", sans-serif';
   ctx.textAlign = "right";
   ctx.fillText(dateStr, W - PAD, y);
   ctx.textAlign = "left";
@@ -821,8 +853,8 @@ const createShareCard = async (words, relevant, archetype, percentages, userName
   thinDash(y); y += 110;
 
   // ── ARCHETYPE ─────────────────────────────────────────────────
-  ctx.fillStyle = "#fff";
-  ctx.font = 'italic 400 85px "Playfair Display", serif';
+  ctx.fillStyle = "#1B0E41";
+  ctx.font = '400 85px "Forum", serif';
   const archetypeText = archetype || "The Style Explorer";
   const archetypeWords = archetypeText.split(" ");
   let line = "";
@@ -840,21 +872,21 @@ const createShareCard = async (words, relevant, archetype, percentages, userName
 
   // ── STYLE BREAKDOWN ───────────────────────────────────────────
   const firstName = (userName || "your").split(" ")[0].toLowerCase();
-  ctx.fillStyle = "#909090";
-  ctx.font = '300 29px "DM Mono", monospace';
+  ctx.fillStyle = "rgba(27, 14, 65, 0.45)";
+  ctx.font = '300 29px "Inter", sans-serif';
   ctx.fillText(`${firstName}'s style is:`.toUpperCase(), PAD, y);
   y += 70;
 
   const wordSizes = [50, 42, 37];
   const pctSizes  = [42, 37, 33];
   words.forEach((word, i) => {
-    ctx.font = `400 ${wordSizes[i]}px "DM Mono", monospace`;
-    ctx.fillStyle = "#fff";
+    ctx.font = `400 ${wordSizes[i]}px "Inter", sans-serif`;
+    ctx.fillStyle = "#1B0E41";
     ctx.textAlign = "left";
     ctx.fillText(word.toUpperCase(), PAD, y);
 
-    ctx.font = `300 ${pctSizes[i]}px "DM Mono", monospace`;
-    ctx.fillStyle = "#a0a0a0";
+    ctx.font = `300 ${pctSizes[i]}px "Inter", sans-serif`;
+    ctx.fillStyle = "rgba(27, 14, 65, 0.5)";
     ctx.textAlign = "right";
     ctx.fillText(`${percentages?.[i] ?? [50, 30, 20][i]}%`, W - PAD, y);
     ctx.textAlign = "left";
@@ -887,7 +919,7 @@ const createShareCard = async (words, relevant, archetype, percentages, userName
       ctx.beginPath();
       ctx.moveTo(cx(p1.x), cy(p1.y));
       ctx.lineTo(cx(p2.x), cy(p2.y));
-      ctx.strokeStyle = "rgba(140, 200, 255, 0.6)";
+      ctx.strokeStyle = "rgba(27, 14, 65, 0.4)";
       ctx.lineWidth = (0.25 / 100) * side;
       ctx.setLineDash([(2.5 / 100) * side, (2 / 100) * side]);
       ctx.stroke();
@@ -903,14 +935,14 @@ const createShareCard = async (words, relevant, archetype, percentages, userName
     if (isH) {
       ctx.beginPath();
       ctx.arc(nx, ny, (5 / 100) * side, 0, Math.PI * 2);
-      ctx.strokeStyle = "rgba(140, 200, 255, 0.3)";
+      ctx.strokeStyle = "rgba(27, 14, 65, 0.15)";
       ctx.lineWidth = (0.3 / 100) * side;
       ctx.stroke();
     }
 
     ctx.beginPath();
     ctx.arc(nx, ny, (isH ? 1.3 : 0.6) / 100 * side, 0, Math.PI * 2);
-    ctx.fillStyle = isH ? "#fff" : "#a0a0a0";
+    ctx.fillStyle = isH ? "#1B0E41" : "rgba(27, 14, 65, 0.3)";
     ctx.fill();
 
     // Labels (matches SVG: fontSize 1.85, dx ±2.2, dy -2.2/-3.5/4)
@@ -919,18 +951,18 @@ const createShareCard = async (words, relevant, archetype, percentages, userName
     const onBot   = node.y > 88;
     const ldx = (onRight ? -2.2 : 2.2) / 100 * side;
     const ldy = (onTop ? 4 : onBot ? -3.5 : -2.2) / 100 * side;
-    ctx.fillStyle = isH ? "#fff" : "#a0a0a0";
-    ctx.font = `${isH ? "400" : "300"} ${Math.round((1.85 / 100) * side)}px "DM Mono", monospace`;
+    ctx.fillStyle = isH ? "#1B0E41" : "rgba(27, 14, 65, 0.4)";
+    ctx.font = `${isH ? "400" : "300"} ${Math.round((1.85 / 100) * side)}px "Inter", sans-serif`;
     ctx.textAlign = onRight ? "right" : "left";
     ctx.fillText(node.id, nx + ldx, ny + ldy);
   });
   ctx.textAlign = "left";
 
   // ── FOOTER ────────────────────────────────────────────────────
-  ctx.fillStyle = "#fff";
-  ctx.font = '300 27px "DM Mono", monospace';
+  ctx.fillStyle = "#1B0E41";
+  ctx.font = '300 27px "Inter", sans-serif';
   ctx.textAlign = "center";
-  ctx.fillText("TAKETHETASTETEST.COM", W / 2, H - 54);
+  ctx.fillText("PATTERN.SHOP", W / 2, H - 54);
   ctx.textAlign = "left";
 
   return canvas;
@@ -977,16 +1009,34 @@ export default function App() {
   const fileRef1 = useRef(null);
   const fileRef2 = useRef(null);
   const fileRefs = [fileRef0, fileRef1, fileRef2];
+  const wordmarkRef = useRef(null);
 
-  const HERO_TEXT = "let your taste precede you";
+  useEffect(() => {
+    const el = wordmarkRef.current;
+    if (!el) return;
+    const fit = () => {
+      const containerWidth = el.parentElement.clientWidth;
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      const testSize = 100;
+      ctx.font = `400 ${testSize}px Forum`;
+      const textWidth = ctx.measureText("PATTERN").width;
+      el.style.fontSize = `${(containerWidth / textWidth) * testSize}px`;
+    };
+    document.fonts.ready.then(fit);
+    const ro = new ResizeObserver(fit);
+    ro.observe(el.parentElement);
+    return () => ro.disconnect();
+  }, []);
 
+  const HERO_TEXT = "STOP SHOPPING OTHER PEOPLE'S TASTE.";
   useEffect(() => {
     if (step !== "home") return;
     if (typed.length < HERO_TEXT.length) {
-      const t = setTimeout(() => setTyped(HERO_TEXT.slice(0, typed.length + 1)), 78);
+      const t = setTimeout(() => setTyped(HERO_TEXT.slice(0, typed.length + 1)), 55);
       return () => clearTimeout(t);
     } else {
-      const t = setTimeout(() => setHeroReady(true), 350);
+      const t = setTimeout(() => setHeroReady(true), 300);
       return () => clearTimeout(t);
     }
   }, [step, typed]);
@@ -1277,7 +1327,7 @@ export default function App() {
         background: "none",
         border: "none",
         cursor: "pointer",
-        color: "#c8c8c8",
+        color: "#1B0E41",
         fontSize: 20,
         padding: 0,
         lineHeight: 1,
@@ -1295,62 +1345,89 @@ export default function App() {
     <>
       <GlobalStyles />
       <div className="app">
-        <div className="page">
-
-          {/* ── HOME ─────────────────────────────────────────────────────── */}
-          {step === "home" && (
-            <div className="fade-up">
-              <nav className="site-nav">
-                <span style={{
-                  fontFamily: "'Playfair Display', serif",
-                  fontStyle: "italic",
-                  fontWeight: 400,
-                  fontSize: 22,
-                  letterSpacing: "-0.02em",
-                }}>
-                  tastetest
-                </span>
-                <span style={{ fontSize: 9, letterSpacing: "0.18em", color: "#a0a0a0", textTransform: "uppercase" }}>
-                  early access
-                </span>
-              </nav>
-
+        {step === "home" ? (
+          <>
+            <div className="announcement-bar">COMING SUMMER 2026</div>
+            <div className="page" style={{ flex: 1, display: "flex", flexDirection: "column" }}>
               <div className="home-hero">
                 <h1 style={{
-                  fontFamily: "'Playfair Display', serif",
-                  fontStyle: "italic",
+                  fontFamily: "'Forum', serif",
                   fontWeight: 400,
-                  fontSize: "clamp(42px, 5.5vw, 80px)",
+                  fontSize: "clamp(32px, 5vw, 72px)",
                   lineHeight: 1.05,
-                  letterSpacing: "-0.02em",
-                  marginBottom: 28,
+                  letterSpacing: "-0.01em",
+                  textTransform: "uppercase",
+                  color: "#1B0E41",
+                  marginBottom: 16,
+                  maxWidth: "50vw",
+                  minHeight: "2.2em",
                 }}>
                   {typed}
                   {!heroReady && (
                     <span style={{
                       display: "inline-block",
-                      width: 3,
+                      width: 2,
                       height: "0.85em",
-                      background: "#fff",
-                      marginLeft: 4,
+                      background: "#1B0E41",
+                      marginLeft: 2,
                       verticalAlign: "middle",
                       animation: "blink 1s step-end infinite",
                     }} />
                   )}
                 </h1>
-
-                <p style={{ fontSize: 13, color: "#b0b0b0", lineHeight: 1.8, marginBottom: 44, maxWidth: 480, letterSpacing: "0.02em", opacity: heroReady ? 1 : 0, animation: heroReady ? "fadeUp 0.55s cubic-bezier(0.16,1,0.3,1) 0s both" : "none" }}>
-                   build your taste profile today — and be first in line when we launch our full personal styling experience
+                <p style={{
+                  fontSize: 13,
+                  letterSpacing: "0.12em",
+                  textTransform: "uppercase",
+                  color: "#1B0E41",
+                  fontWeight: 400,
+                  marginBottom: 32,
+                  opacity: heroReady ? 1 : 0,
+                  animation: heroReady ? "fadeUp 0.5s ease both" : "none",
+                }}>
+                  START SHOPPING WITH PATTERN.
                 </p>
-                <button onClick={() => setStep("upload")} style={{ ...btnStyle, opacity: heroReady ? 1 : 0, animation: heroReady ? "fadeUp 0.55s cubic-bezier(0.16,1,0.3,1) 0.18s both" : "none" }}>
-                  take the taste test →
+                <button
+                  onClick={() => setStep("upload")}
+                  style={{
+                    ...btnStyle,
+                    marginBottom: 12,
+                    opacity: heroReady ? 1 : 0,
+                    animation: heroReady ? "fadeUp 0.5s ease 0.1s both" : "none",
+                  }}
+                >
+                  GET STARTED
                 </button>
-                <button onClick={() => setStep("waitlist")} style={{ ...ghostBtnStyle, marginTop: 32, fontSize: 10, letterSpacing: "0.08em", padding: "10px 20px", opacity: heroReady ? 1 : 0, animation: heroReady ? "fadeUp 0.55s cubic-bezier(0.16,1,0.3,1) 0.42s both" : "none" }}>
-                  not ready yet? join the waitlist →
-                </button>
+                <p style={{
+                  fontSize: 13,
+                  color: "#1B0E41",
+                  opacity: heroReady ? 1 : 0,
+                  animation: heroReady ? "fadeUp 0.5s ease 0.2s both" : "none",
+                }}>
+                  Not ready yet? Join our{" "}
+                  <a
+                    onClick={() => setStep("waitlist")}
+                    style={{ color: "#1B0E41", textDecoration: "underline", cursor: "pointer" }}
+                  >
+                    waitlist
+                  </a>.
+                </p>
+              </div>
+              <div style={{
+                marginTop: "auto",
+                opacity: heroReady ? 1 : 0,
+                animation: heroReady ? "fadeIn 0.6s ease 0.3s both" : "none",
+              }}>
+                <div ref={wordmarkRef} className="brand-wordmark">PATTERN</div>
+                <div className="site-footer">
+                  <button className="site-footer-link">CONTACT US</button>
+                  <button className="site-footer-link">FREQUENTLY ASKED QUESTIONS</button>
+                </div>
               </div>
             </div>
-          )}
+          </>
+        ) : (
+          <div className="page">
 
           {/* ── WAITLIST ─────────────────────────────────────────────────── */}
           {step === "waitlist" && (
@@ -1359,18 +1436,18 @@ export default function App() {
               {!waitlistDone ? (
                 <>
                   <h2 style={{
-                    fontFamily: "'Playfair Display', serif",
-                    fontStyle: "italic",
+                    fontFamily: "'Forum', serif",
                     fontWeight: 400,
                     fontSize: "clamp(28px, 4vw, 42px)",
                     lineHeight: 1.2,
                     marginBottom: 10,
                     letterSpacing: "-0.01em",
                     textAlign: "center",
+                    color: "#1B0E41",
                   }}>
                     stay in the loop.
                   </h2>
-                  <p style={{ fontSize: 12, color: "#b0b0b0", marginBottom: 36, letterSpacing: "0.03em", lineHeight: 1.8, textAlign: "center", maxWidth: 360 }}>
+                  <p style={{ fontSize: 12, color: "rgba(27,14,65,0.6)", marginBottom: 36, letterSpacing: "0.03em", lineHeight: 1.8, textAlign: "center", maxWidth: 360 }}>
                     drop your info and we'll let you know when our full styling product launches — plus remind you to come back and take the test whenever you're ready.
                   </p>
                   <form onSubmit={handleWaitlist} style={{ width: "100%", maxWidth: 400 }}>
@@ -1404,7 +1481,7 @@ export default function App() {
                         autoComplete="tel"
                       />
                     </div>
-                    {waitlistError && <p style={{ fontSize: 11, color: "#b0b0b0", marginBottom: 12 }}>{waitlistError}</p>}
+                    {waitlistError && <p style={{ fontSize: 11, color: "rgba(27,14,65,0.6)", marginBottom: 12 }}>{waitlistError}</p>}
                     <button type="submit" disabled={waitlistSubmitting} style={{ ...btnStyle, width: "100%", textAlign: "center", opacity: waitlistSubmitting ? 0.4 : 1, cursor: waitlistSubmitting ? "default" : "pointer" }}>
                       {waitlistSubmitting ? "saving..." : "join the waitlist →"}
                     </button>
@@ -1413,18 +1490,18 @@ export default function App() {
               ) : (
                 <>
                   <h2 style={{
-                    fontFamily: "'Playfair Display', serif",
-                    fontStyle: "italic",
+                    fontFamily: "'Forum', serif",
                     fontWeight: 400,
                     fontSize: "clamp(28px, 4vw, 42px)",
                     lineHeight: 1.2,
                     marginBottom: 16,
                     letterSpacing: "-0.01em",
                     textAlign: "center",
+                    color: "#1B0E41",
                   }}>
                     you're on the list.
                   </h2>
-                  <p style={{ fontSize: 12, color: "#b0b0b0", marginBottom: 36, letterSpacing: "0.03em", lineHeight: 1.8, textAlign: "center", maxWidth: 360 }}>
+                  <p style={{ fontSize: 12, color: "rgba(27,14,65,0.6)", marginBottom: 36, letterSpacing: "0.03em", lineHeight: 1.8, textAlign: "center", maxWidth: 360 }}>
                     we'll reach out when we launch. and whenever you're ready to take the test, we'll be here.
                   </p>
                   <button onClick={() => setStep("home")} style={{ ...ghostBtnStyle, fontSize: 10, letterSpacing: "0.08em", padding: "10px 20px" }}>
@@ -1440,18 +1517,18 @@ export default function App() {
             <div className="fade-up" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "72px 0 88px", minHeight: "calc(100vh - 82px)", position: "relative" }}>
               {backBtn("questions")}
               <h2 style={{
-                fontFamily: "'Playfair Display', serif",
-                fontStyle: "italic",
+                fontFamily: "'Forum', serif",
                 fontWeight: 400,
                 fontSize: "clamp(28px, 4vw, 42px)",
                 lineHeight: 1.2,
                 marginBottom: 14,
                 letterSpacing: "-0.01em",
                 textAlign: "center",
+                color: "#1B0E41",
               }}>
                 unlock your results
               </h2>
-              <p style={{ fontSize: 13, color: "#b0b0b0", lineHeight: 1.8, marginBottom: 40, maxWidth: 380, letterSpacing: "0.02em", textAlign: "center" }}>
+              <p style={{ fontSize: 13, color: "rgba(27,14,65,0.6)", lineHeight: 1.8, marginBottom: 40, maxWidth: 380, letterSpacing: "0.02em", textAlign: "center" }}>
                 get your taste profile now and early access to our full styling product when we launch
               </p>
               <form onSubmit={handleSignup} style={{ width: "100%", maxWidth: 400 }}>
@@ -1485,7 +1562,7 @@ export default function App() {
                     autoComplete="tel"
                   />
                 </div>
-                {emailError && <p style={{ fontSize: 11, color: "#b0b0b0", marginBottom: 12 }}>{emailError}</p>}
+                {emailError && <p style={{ fontSize: 11, color: "rgba(27,14,65,0.6)", marginBottom: 12 }}>{emailError}</p>}
                 <button type="submit" disabled={submitting} style={{ ...btnStyle, width: "100%", textAlign: "center", opacity: submitting ? 0.4 : 1, cursor: submitting ? "default" : "pointer" }}>
                   {submitting ? "submitting..." : "reveal my taste →"}
                 </button>
@@ -1498,21 +1575,21 @@ export default function App() {
             <div className="fade-up" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "72px 0 88px", minHeight: "calc(100vh - 82px)", position: "relative" }}>
               {backBtn("home")}
               <h2 style={{
-                fontFamily: "'Playfair Display', serif",
-                fontStyle: "italic",
+                fontFamily: "'Forum', serif",
                 fontWeight: 400,
                 fontSize: "clamp(28px, 4vw, 42px)",
                 lineHeight: 1.2,
                 marginBottom: 10,
                 letterSpacing: "-0.01em",
                 textAlign: "center",
+                color: "#1B0E41",
               }}>
                 show us your style.
               </h2>
 
               {!showTextPath ? (
                 <>
-                  <p style={{ fontSize: 11, color: "#c8c8c8", marginBottom: 36, letterSpacing: "0.04em", lineHeight: 1.6, textAlign: "center" }}>
+                  <p style={{ fontSize: 11, color: "rgba(27,14,65,0.55)", marginBottom: 36, letterSpacing: "0.04em", lineHeight: 1.6, textAlign: "center" }}>
                     outfit photos, saved inspo, screenshots — anything that shows how you actually dress
                   </p>
                   <form onSubmit={handleUpload} style={{ width: "100%", maxWidth: 400, display: "flex", flexDirection: "column", alignItems: "center" }}>
@@ -1524,7 +1601,7 @@ export default function App() {
                           <div
                             onClick={() => fileRefs[i].current?.click()}
                             style={{
-                              border: "1px dashed rgba(140, 200, 255, 0.25)",
+                              border: "1px dashed rgba(27, 14, 65, 0.25)",
                               cursor: "pointer",
                               overflow: "hidden",
                               aspectRatio: "3 / 4",
@@ -1533,7 +1610,7 @@ export default function App() {
                               alignItems: "center",
                               justifyContent: "center",
                               position: "relative",
-                              background: photoPreviews[i] ? "transparent" : "#0f0f0f",
+                              background: photoPreviews[i] ? "transparent" : "#f5f5f5",
                             }}
                           >
                             {photoPreviews[i] ? (
@@ -1574,10 +1651,10 @@ export default function App() {
                                 </button>
                               </>
                             ) : (
-                              <span style={{ fontSize: 20, color: "#808080", lineHeight: 1 }}>+</span>
+                              <span style={{ fontSize: 20, color: "rgba(27,14,65,0.35)", lineHeight: 1 }}>+</span>
                             )}
                           </div>
-                          <p style={{ fontSize: 9, color: "#909090", letterSpacing: "0.08em", textAlign: "center", textTransform: "uppercase" }}>
+                          <p style={{ fontSize: 9, color: "rgba(27,14,65,0.45)", letterSpacing: "0.08em", textAlign: "center", textTransform: "uppercase" }}>
                             {i === 2 ? "optional" : "required"}
                           </p>
                           <input
@@ -1591,12 +1668,12 @@ export default function App() {
                       ))}
                     </div>
 
-                    <p style={{ fontSize: 11, color: "#808080", marginBottom: 20, letterSpacing: "0.03em", textAlign: "center" }}>
+                    <p style={{ fontSize: 11, color: "rgba(27,14,65,0.5)", marginBottom: 20, letterSpacing: "0.03em", textAlign: "center" }}>
                       don't have outfit photos?{" "}
                       <button
                         type="button"
                         onClick={() => { setShowTextPath(true); setError(""); }}
-                        style={{ background: "none", border: "none", padding: 0, color: "#c8c8c8", fontSize: 11, letterSpacing: "0.03em", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}
+                        style={{ background: "none", border: "none", padding: 0, color: "#1B0E41", fontSize: 11, letterSpacing: "0.03em", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}
                       >
                         describe your style instead
                       </button>
@@ -1611,16 +1688,16 @@ export default function App() {
                       style={{ ...inputStyle, resize: "none", lineHeight: 1.7, paddingTop: 12, width: "100%", marginBottom: 4 }}
                     />
 
-                    {error && <p style={{ fontSize: 11, color: "#b0b0b0", marginTop: 10, alignSelf: "flex-start" }}>{error}</p>}
+                    {error && <p style={{ fontSize: 11, color: "rgba(27,14,65,0.6)", marginTop: 10, alignSelf: "flex-start" }}>{error}</p>}
                     <button type="submit" style={{ ...btnStyle, marginTop: 28, width: "100%", textAlign: "center" }}>
                       continue →
                     </button>
-                    <p style={{ fontSize: 11, color: "#808080", marginTop: 20, letterSpacing: "0.03em", textAlign: "center" }}>
+                    <p style={{ fontSize: 11, color: "rgba(27,14,65,0.5)", marginTop: 20, letterSpacing: "0.03em", textAlign: "center" }}>
                       don't have time right now?{" "}
                       <button
                         type="button"
                         onClick={() => setStep("waitlist")}
-                        style={{ background: "none", border: "none", padding: 0, color: "#c8c8c8", fontSize: 11, letterSpacing: "0.03em", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}
+                        style={{ background: "none", border: "none", padding: 0, color: "#1B0E41", fontSize: 11, letterSpacing: "0.03em", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}
                       >
                         join the waitlist
                       </button>
@@ -1629,7 +1706,7 @@ export default function App() {
                 </>
               ) : (
                 <>
-                  <p style={{ fontSize: 11, color: "#c8c8c8", marginBottom: 36, letterSpacing: "0.04em", lineHeight: 1.6, textAlign: "center" }}>
+                  <p style={{ fontSize: 11, color: "rgba(27,14,65,0.55)", marginBottom: 36, letterSpacing: "0.04em", lineHeight: 1.6, textAlign: "center" }}>
                     tell us a bit about how you dress
                   </p>
                   <form onSubmit={handleTextUpload} style={{ width: "100%", maxWidth: 400, display: "flex", flexDirection: "column", alignItems: "center" }}>
@@ -1668,15 +1745,15 @@ export default function App() {
                       style={{ ...inputStyle, resize: "none", lineHeight: 1.7, paddingTop: 12, width: "100%", marginBottom: 4 }}
                     />
 
-                    {error && <p style={{ fontSize: 11, color: "#b0b0b0", marginTop: 10, alignSelf: "flex-start" }}>{error}</p>}
+                    {error && <p style={{ fontSize: 11, color: "rgba(27,14,65,0.6)", marginTop: 10, alignSelf: "flex-start" }}>{error}</p>}
                     <button type="submit" style={{ ...btnStyle, marginTop: 28, width: "100%", textAlign: "center" }}>
                       continue →
                     </button>
-                    <p style={{ fontSize: 11, color: "#808080", marginTop: 20, letterSpacing: "0.03em", textAlign: "center" }}>
+                    <p style={{ fontSize: 11, color: "rgba(27,14,65,0.5)", marginTop: 20, letterSpacing: "0.03em", textAlign: "center" }}>
                       <button
                         type="button"
                         onClick={() => { setShowTextPath(false); setError(""); }}
-                        style={{ background: "none", border: "none", padding: 0, color: "#c8c8c8", fontSize: 11, letterSpacing: "0.03em", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}
+                        style={{ background: "none", border: "none", padding: 0, color: "#1B0E41", fontSize: 11, letterSpacing: "0.03em", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}
                       >
                         ← back to photo upload
                       </button>
@@ -1690,7 +1767,7 @@ export default function App() {
           {/* ── QUESTIONS ────────────────────────────────────────────────── */}
           {step === "questions" && questionsLoading && (
             <div className="generating-layout fade-in">
-              <p style={{ fontSize: 11, letterSpacing: "0.14em", color: "#c8c8c8", textTransform: "uppercase" }}>
+              <p style={{ fontSize: 11, letterSpacing: "0.14em", color: "rgba(27,14,65,0.55)", textTransform: "uppercase" }}>
                 reading your style...
               </p>
               <div style={{ width: "100%", maxWidth: 560 }}>
@@ -1704,29 +1781,29 @@ export default function App() {
               {backBtn("upload")}
 
               <h2 style={{
-                    fontFamily: "'Playfair Display', serif",
-                    fontStyle: "italic",
+                    fontFamily: "'Forum', serif",
                     fontWeight: 400,
                     fontSize: "clamp(28px, 4vw, 42px)",
                     lineHeight: 1.2,
                     marginBottom: 10,
                     letterSpacing: "-0.01em",
                     textAlign: "center",
+                    color: "#1B0E41",
                   }}>
                     a few quick questions.
                   </h2>
-                  <p style={{ fontSize: 11, color: "#c8c8c8", marginBottom: 44, letterSpacing: "0.04em", lineHeight: 1.6, textAlign: "center" }}>
+                  <p style={{ fontSize: 11, color: "rgba(27,14,65,0.55)", marginBottom: 44, letterSpacing: "0.04em", lineHeight: 1.6, textAlign: "center" }}>
                     this or that — just go with your gut
                   </p>
 
                   <div style={{ width: "100%", maxWidth: 440, display: "flex", flexDirection: "column", gap: 32 }}>
                     {thisThatQuestions?.map((q, i) => (
                       <div key={i}>
-                        <p style={{ fontSize: 10, color: "#b0b0b0", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>
+                        <p style={{ fontSize: 10, color: "rgba(27,14,65,0.5)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>
                           {i + 1} of {thisThatQuestions.length}
                         </p>
-                        <p style={{ fontSize: 13, color: "#e0e0e0", marginBottom: 14, lineHeight: 1.6, letterSpacing: "0.01em" }}>
-                          at <em style={{ color: "#fff" }}>{q.situation}</em>...
+                        <p style={{ fontSize: 13, color: "#1B0E41", marginBottom: 14, lineHeight: 1.6, letterSpacing: "0.01em" }}>
+                          at <em style={{ color: "#1B0E41" }}>{q.situation}</em>...
                         </p>
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                           {["A", "B"].map((opt) => {
@@ -1737,9 +1814,9 @@ export default function App() {
                                 key={opt}
                                 onClick={() => handleAnswer(i, opt)}
                                 style={{
-                                  background: selected ? "#fff" : "transparent",
-                                  color: selected ? "#0a0a0a" : "#b0b0b0",
-                                  border: selected ? "1px solid #fff" : "1px solid rgba(140, 200, 255, 0.25)",
+                                  background: selected ? "#1B0E41" : "transparent",
+                                  color: selected ? "#fff" : "rgba(27,14,65,0.6)",
+                                  border: selected ? "1px solid #1B0E41" : "1px solid rgba(27, 14, 65, 0.25)",
                                   padding: "14px 12px",
                                   fontSize: 11,
                                   letterSpacing: "0.02em",
@@ -1759,10 +1836,10 @@ export default function App() {
 
                     {/* Looking for question */}
                     <div>
-                      <p style={{ fontSize: 10, color: "#b0b0b0", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>
+                      <p style={{ fontSize: 10, color: "rgba(27,14,65,0.5)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>
                         one more
                       </p>
-                      <p style={{ fontSize: 13, color: "#e0e0e0", marginBottom: 14, lineHeight: 1.6, letterSpacing: "0.01em" }}>
+                      <p style={{ fontSize: 13, color: "#1B0E41", marginBottom: 14, lineHeight: 1.6, letterSpacing: "0.01em" }}>
                         what's one thing you're trying to find right now?
                       </p>
                       <input
@@ -1774,7 +1851,7 @@ export default function App() {
                       />
                     </div>
 
-                    {error && <p style={{ fontSize: 11, color: "#b0b0b0" }}>{error}</p>}
+                    {error && <p style={{ fontSize: 11, color: "rgba(27,14,65,0.6)" }}>{error}</p>}
                     <button
                       onClick={handleQuestionsNext}
                       style={{ ...btnStyle, width: "100%", textAlign: "center", marginTop: 8 }}
@@ -1788,7 +1865,7 @@ export default function App() {
           {/* ── GENERATING ───────────────────────────────────────────────── */}
           {step === "generating" && (
             <div className="generating-layout fade-in">
-              <p style={{ fontSize: 11, letterSpacing: "0.14em", color: "#c8c8c8", textTransform: "uppercase" }}>
+              <p style={{ fontSize: 11, letterSpacing: "0.14em", color: "rgba(27,14,65,0.55)", textTransform: "uppercase" }}>
                 mapping your taste...
               </p>
               <div style={{ width: "100%", maxWidth: 560 }}>
@@ -1801,13 +1878,13 @@ export default function App() {
           {step === "results" && (
             <div className="fade-up" style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "72px 0 88px", minHeight: "calc(100vh - 82px)", position: "relative" }}>
               <h2 style={{
-                fontFamily: "'DM Mono', monospace",
+                fontFamily: "'Inter', sans-serif",
                 fontStyle: "normal",
                 fontWeight: 400,
                 fontSize: "clamp(11px, 1.4vw, 13px)",
                 letterSpacing: "0.12em",
                 textTransform: "uppercase",
-                color: "#c8c8c8",
+                color: "rgba(27,14,65,0.55)",
                 marginBottom: subtitle ? 10 : 36,
                 textAlign: "center",
               }}>
@@ -1815,9 +1892,9 @@ export default function App() {
               </h2>
               {subtitle && (
                 <p style={{
-                  fontFamily: "'DM Mono', monospace",
+                  fontFamily: "'Inter', sans-serif",
                   fontSize: "clamp(11px, 1.3vw, 13px)",
-                  color: "#b0b0b0",
+                  color: "rgba(27,14,65,0.6)",
                   textAlign: "center",
                   maxWidth: 320,
                   lineHeight: 1.6,
@@ -1831,8 +1908,8 @@ export default function App() {
               {/* Share card preview — receipt
                style */}
               <div style={{
-                background: "#0a0a0a",
-                border: "1px solid #222",
+                background: "#fff",
+                border: "1px solid rgba(27,14,65,0.15)",
                 borderRadius: 12,
                 width: "100%",
                 maxWidth: 280,
@@ -1843,34 +1920,33 @@ export default function App() {
                 marginBottom: 28,
                 flexShrink: 0,
                 overflow: "hidden",
-                fontFamily: "'DM Mono', monospace",
+                fontFamily: "'Inter', sans-serif",
               }}>
                 {/* Receipt header */}
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
-                  <span style={{ fontSize: 7.5, color: "#909090", letterSpacing: "0.12em", textTransform: "uppercase" }}>taste profile</span>
-                  <span style={{ fontSize: 7, color: "#808080", letterSpacing: "0.06em" }}>
+                  <span style={{ fontSize: 7.5, color: "rgba(27,14,65,0.45)", letterSpacing: "0.12em", textTransform: "uppercase" }}>your pattern</span>
+                  <span style={{ fontSize: 7, color: "rgba(27,14,65,0.4)", letterSpacing: "0.06em" }}>
                     {new Date().toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" }).replace(/\//g, ".")}
                   </span>
                 </div>
-                <div style={{ borderTop: "1px dashed rgba(140, 200, 255, 0.2)", marginBottom: 12 }} />
+                <div style={{ borderTop: "1px dashed rgba(27,14,65,0.15)", marginBottom: 12 }} />
 
                 {/* Archetype */}
                 <span style={{
-                  fontFamily: "'Playfair Display', serif",
-                  fontStyle: "italic",
+                  fontFamily: "'Forum', serif",
                   fontWeight: 400,
                   fontSize: 22,
                   lineHeight: 1.1,
                   letterSpacing: "-0.02em",
-                  color: "#fff",
+                  color: "#1B0E41",
                   marginBottom: 12,
                 }}>
                   {archetype}
                 </span>
-                <div style={{ borderTop: "1px dashed rgba(140, 200, 255, 0.2)", marginBottom: 10 }} />
+                <div style={{ borderTop: "1px dashed rgba(27,14,65,0.15)", marginBottom: 10 }} />
 
                 {/* Style breakdown */}
-                <p style={{ fontSize: 7.5, color: "#909090", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>
+                <p style={{ fontSize: 7.5, color: "rgba(27,14,65,0.45)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>
                   {name.split(" ")[0].toLowerCase()}'s style is:
                 </p>
                 {styleWords.map((word, i) => (
@@ -1880,15 +1956,15 @@ export default function App() {
                     alignItems: "baseline",
                     marginBottom: i < 2 ? 5 : 0,
                   }}>
-                    <span style={{ fontSize: [13, 11, 9.5][i], color: "#fff", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                    <span style={{ fontSize: [13, 11, 9.5][i], color: "#1B0E41", letterSpacing: "0.08em", textTransform: "uppercase" }}>
                       {word}
                     </span>
-                    <span style={{ fontSize: [11, 9.5, 8.5][i], color: "#a0a0a0", letterSpacing: "0.06em" }}>
+                    <span style={{ fontSize: [11, 9.5, 8.5][i], color: "rgba(27,14,65,0.5)", letterSpacing: "0.06em" }}>
                       {stylePercentages[i]}%
                     </span>
                   </div>
                 ))}
-                <div style={{ borderTop: "1px dashed rgba(140, 200, 255, 0.2)", marginTop: 10, marginBottom: 8 }} />
+                <div style={{ borderTop: "1px dashed rgba(27,14,65,0.15)", marginTop: 10, marginBottom: 8 }} />
 
                 {/* Constellation */}
                 <div style={{ flex: 1, minHeight: 0 }}>
@@ -1896,8 +1972,8 @@ export default function App() {
                 </div>
 
                 {/* Footer */}
-                <p style={{ fontSize: 7, color: "#fff", letterSpacing: "0.1em", textTransform: "uppercase", marginTop: 8, textAlign: "center" }}>
-                  takethetastetest.com
+                <p style={{ fontSize: 7, color: "#1B0E41", letterSpacing: "0.1em", textTransform: "uppercase", marginTop: 8, textAlign: "center" }}>
+                  pattern.shop
                 </p>
               </div>
 
@@ -1920,7 +1996,8 @@ export default function App() {
             </div>
           )}
 
-        </div>
+          </div>
+        )}
       </div>
     </>
   );
