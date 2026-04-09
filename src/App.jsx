@@ -962,7 +962,7 @@ const createShareCard = async (words, relevant, archetype, percentages, userName
   ctx.fillStyle = "#1B0E41";
   ctx.font = '300 27px "Inter", sans-serif';
   ctx.textAlign = "center";
-  ctx.fillText("PATTERN.SHOP", W / 2, H - 54);
+  ctx.fillText("SHOPPATTERN.CO", W / 2, H - 54);
   ctx.textAlign = "left";
 
   return canvas;
@@ -1396,7 +1396,7 @@ export default function App() {
                     animation: heroReady ? "fadeUp 0.5s ease 0.1s both" : "none",
                   }}
                 >
-                  GET STARTED
+                  REVEAL YOUR TASTE PATTERN
                 </button>
                 <p style={{
                   fontSize: 13,
@@ -1404,13 +1404,13 @@ export default function App() {
                   opacity: heroReady ? 1 : 0,
                   animation: heroReady ? "fadeUp 0.5s ease 0.2s both" : "none",
                 }}>
-                  Not ready yet? Join our{" "}
+                  Or {" "}
                   <a
                     onClick={() => setStep("waitlist")}
                     style={{ color: "#1B0E41", textDecoration: "underline", cursor: "pointer" }}
                   >
-                    waitlist
-                  </a>.
+                    sign up 
+                  </a> {" "} to get notified when we launch.
                 </p>
               </div>
               <div style={{
@@ -1448,7 +1448,7 @@ export default function App() {
                     stay in the loop.
                   </h2>
                   <p style={{ fontSize: 12, color: "rgba(27,14,65,0.6)", marginBottom: 36, letterSpacing: "0.03em", lineHeight: 1.8, textAlign: "center", maxWidth: 360 }}>
-                    drop your info and we'll let you know when our full styling product launches — plus remind you to come back and take the test whenever you're ready.
+                    drop your info and we'll let you know when our full shopping product launches.
                   </p>
                   <form onSubmit={handleWaitlist} style={{ width: "100%", maxWidth: 400 }}>
                     <div style={{ marginBottom: 14 }}>
@@ -1483,7 +1483,7 @@ export default function App() {
                     </div>
                     {waitlistError && <p style={{ fontSize: 11, color: "rgba(27,14,65,0.6)", marginBottom: 12 }}>{waitlistError}</p>}
                     <button type="submit" disabled={waitlistSubmitting} style={{ ...btnStyle, width: "100%", textAlign: "center", opacity: waitlistSubmitting ? 0.4 : 1, cursor: waitlistSubmitting ? "default" : "pointer" }}>
-                      {waitlistSubmitting ? "saving..." : "join the waitlist →"}
+                      {waitlistSubmitting ? "saving..." : "get on the list →"}
                     </button>
                   </form>
                 </>
@@ -1693,14 +1693,14 @@ export default function App() {
                       continue →
                     </button>
                     <p style={{ fontSize: 11, color: "rgba(27,14,65,0.5)", marginTop: 20, letterSpacing: "0.03em", textAlign: "center" }}>
-                      don't have time right now?{" "}
+                      don't have time right now? {" "}
                       <button
                         type="button"
                         onClick={() => setStep("waitlist")}
                         style={{ background: "none", border: "none", padding: 0, color: "#1B0E41", fontSize: 11, letterSpacing: "0.03em", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}
                       >
-                        join the waitlist
-                      </button>
+                        sign up
+                      </button> to get notified when we launch
                     </p>
                   </form>
                 </>
@@ -1973,7 +1973,7 @@ export default function App() {
 
                 {/* Footer */}
                 <p style={{ fontSize: 7, color: "#1B0E41", letterSpacing: "0.1em", textTransform: "uppercase", marginTop: 8, textAlign: "center" }}>
-                  pattern.shop
+                  shoppattern.co
                 </p>
               </div>
 
