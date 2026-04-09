@@ -1015,19 +1015,18 @@ export default function App() {
     const el = wordmarkRef.current;
     if (!el) return;
     const fit = () => {
-      const containerWidth = el.parentElement.clientWidth;
       const canvas = document.createElement("canvas");
       const ctx = canvas.getContext("2d");
       const testSize = 100;
       ctx.font = `400 ${testSize}px Forum`;
       const textWidth = ctx.measureText("PATTERN").width;
-      el.style.fontSize = `${(containerWidth / textWidth) * testSize}px`;
+      el.style.fontSize = `${(window.innerWidth / textWidth) * testSize}px`;
     };
+    fit();
     document.fonts.ready.then(fit);
-    const ro = new ResizeObserver(fit);
-    ro.observe(el.parentElement);
-    return () => ro.disconnect();
-  }, []);
+    window.addEventListener("resize", fit);
+    return () => window.removeEventListener("resize", fit);
+  }, [step]);
 
   const HERO_TEXT = "STOP SHOPPING OTHER PEOPLE'S TASTE.";
   useEffect(() => {
@@ -1415,6 +1414,8 @@ export default function App() {
               </div>
               <div style={{
                 marginTop: "auto",
+                paddingBottom: "max(16px, env(safe-area-inset-bottom))",
+                overflow: "visible",
                 opacity: heroReady ? 1 : 0,
                 animation: heroReady ? "fadeIn 0.6s ease 0.3s both" : "none",
               }}>
