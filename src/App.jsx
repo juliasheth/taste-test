@@ -1020,7 +1020,7 @@ export default function App() {
       const testSize = 100;
       ctx.font = `400 ${testSize}px Forum`;
       const textWidth = ctx.measureText("PATTERN").width;
-      el.style.fontSize = `${(window.innerWidth / textWidth) * testSize}px`;
+      el.style.fontSize = `${((window.innerWidth - 56) / textWidth) * testSize}px`;
     };
     fit();
     document.fonts.ready.then(fit);
