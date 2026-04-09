@@ -207,7 +207,7 @@ const GlobalStyles = () => (
     @import url('https://fonts.googleapis.com/css2?family=Forum&family=Inter:wght@300;400;500&display=swap');
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { background: #fff; color: #1B0E41; overflow-x: hidden; }
-    .app { font-family: 'Inter', sans-serif; background: #fff; color: #1B0E41; min-height: 100vh; padding-bottom: env(safe-area-inset-bottom); display: flex; flex-direction: column; }
+    .app { font-family: 'Inter', sans-serif; background: #fff; color: #1B0E41; min-height: 100vh; min-height: 100dvh; padding-bottom: env(safe-area-inset-bottom); display: flex; flex-direction: column; }
     .page { padding: 0 28px; }
     input, textarea, button { font-family: 'Inter', sans-serif; }
     input:focus, textarea:focus { outline: none; }
@@ -257,7 +257,7 @@ const GlobalStyles = () => (
       font-family: 'Forum', serif;
       font-size: 21vw;
       color: #1B0E41;
-      line-height: 0.82;
+      line-height: 1;
       letter-spacing: -0.02em;
       white-space: nowrap;
       overflow: visible;
