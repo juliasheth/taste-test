@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Forum');
+    </style>
+  </defs>
+  <text
+    x="50"
+    y="82"
+    font-family="Forum, Georgia, serif"
+    font-size="90"
+    fill="#1B0E41"
+    text-anchor="middle"
+  >P</text>
+</svg>

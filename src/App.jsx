@@ -1410,7 +1410,7 @@ export default function App() {
                     style={{ color: "#1B0E41", textDecoration: "underline", cursor: "pointer" }}
                   >
                     sign up 
-                  </a> {" "} to get notified when we launch.
+                  </a> {" "} to get notified when we launch
                 </p>
               </div>
               <div style={{
@@ -1419,10 +1419,10 @@ export default function App() {
                 animation: heroReady ? "fadeIn 0.6s ease 0.3s both" : "none",
               }}>
                 <div ref={wordmarkRef} className="brand-wordmark">PATTERN</div>
-                <div className="site-footer">
+                {/* <div className="site-footer">
                   <button className="site-footer-link">CONTACT US</button>
                   <button className="site-footer-link">FREQUENTLY ASKED QUESTIONS</button>
-                </div>
+                </div> */}
               </div>
             </div>
           </>
